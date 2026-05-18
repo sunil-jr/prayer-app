@@ -1,14 +1,16 @@
 import 'package:flutter/material.dart';
+import 'constants/app_colors.dart';
 import 'constants/app_strings.dart';
 import 'constants/app_theme.dart';
 import 'screens/home/home_screen.dart';
-import 'screens/prayer/prayer_screen.dart';
+import 'screens/answered/answered_screen.dart';
+import 'screens/wellness/wellness_screen.dart';
+import 'screens/breathe/breathe_screen.dart';
 import 'screens/journal/journal_screen.dart';
 import 'screens/settings/settings_screen.dart';
 
-/// Gentle 300 ms opacity crossfade — used everywhere instead of the default slide.
 PageRoute<T> fadeRoute<T extends Object?>(Widget page) => PageRouteBuilder<T>(
-      transitionDuration: const Duration(milliseconds: 300),
+      transitionDuration: const Duration(milliseconds: 280),
       reverseTransitionDuration: const Duration(milliseconds: 200),
       pageBuilder: (_, _, _) => page,
       transitionsBuilder: (_, animation, _, child) => FadeTransition(
@@ -53,59 +55,65 @@ class _MainShellState extends State<MainShell> {
         index: _currentIndex,
         children: [
           HomeScreen(onNavigate: _navigateTo),
-          const PrayerScreen(),
+          const AnsweredScreen(),
+          const WellnessScreen(),
+          BreatheScreen(onNavigateToPrayer: () => _navigateTo(4)),
           const JournalScreen(),
           const SettingsScreen(),
         ],
       ),
-      bottomNavigationBar: BottomNavigationBar(
-        currentIndex: _currentIndex,
-        onTap: _navigateTo,
-        items: const [
-          BottomNavigationBarItem(
-            icon: Icon(Icons.home_outlined),
-            activeIcon: Icon(Icons.home),
-            label: AppStrings.navHome,
-            tooltip: AppStrings.navHome,
+      bottomNavigationBar: Container(
+        decoration: BoxDecoration(
+          color: AppColors.surface,
+          border: const Border(
+            top: BorderSide(color: AppColors.divider, width: 1),
           ),
-          BottomNavigationBarItem(
-            icon: Icon(Icons.self_improvement),
-            activeIcon: Icon(Icons.self_improvement),
-            label: AppStrings.navPrayer,
-            tooltip: AppStrings.navPrayer,
-          ),
-          BottomNavigationBarItem(
-            icon: Icon(Icons.book_outlined),
-            activeIcon: Icon(Icons.book),
-            label: AppStrings.navJournal,
-            tooltip: AppStrings.navJournal,
-          ),
-          BottomNavigationBarItem(
-            icon: Icon(Icons.settings_outlined),
-            activeIcon: Icon(Icons.settings),
-            label: AppStrings.navSettings,
-            tooltip: AppStrings.navSettings,
-          ),
-        ],
+        ),
+        child: BottomNavigationBar(
+          currentIndex: _currentIndex,
+          onTap: _navigateTo,
+          backgroundColor: Colors.transparent,
+          elevation: 0,
+          items: const [
+            BottomNavigationBarItem(
+              icon: Icon(Icons.home_outlined),
+              activeIcon: Icon(Icons.home),
+              label: AppStrings.navHome,
+              tooltip: AppStrings.navHome,
+            ),
+            BottomNavigationBarItem(
+              icon: Icon(Icons.favorite_border),
+              activeIcon: Icon(Icons.favorite),
+              label: AppStrings.navAnswered,
+              tooltip: AppStrings.navAnswered,
+            ),
+            BottomNavigationBarItem(
+              icon: Icon(Icons.trending_up_outlined),
+              activeIcon: Icon(Icons.trending_up),
+              label: AppStrings.navWellness,
+              tooltip: AppStrings.navWellness,
+            ),
+            BottomNavigationBarItem(
+              icon: Icon(Icons.air_outlined),
+              activeIcon: Icon(Icons.air),
+              label: AppStrings.navBreathe,
+              tooltip: AppStrings.navBreathe,
+            ),
+            BottomNavigationBarItem(
+              icon: Icon(Icons.menu_book_outlined),
+              activeIcon: Icon(Icons.menu_book),
+              label: AppStrings.navJournal,
+              tooltip: AppStrings.navJournal,
+            ),
+            BottomNavigationBarItem(
+              icon: Icon(Icons.settings_outlined),
+              activeIcon: Icon(Icons.settings),
+              label: AppStrings.navSettings,
+              tooltip: AppStrings.navSettings,
+            ),
+          ],
+        ),
       ),
     );
   }
-}
-
-// Helper accessible anywhere below MainShell to jump tabs.
-class NavController extends InheritedWidget {
-  final void Function(int index) navigateTo;
-
-  const NavController({
-    super.key,
-    required this.navigateTo,
-    required super.child,
-  });
-
-  static NavController? of(BuildContext context) =>
-      context.dependOnInheritedWidgetOfExactType<NavController>();
-
-  @override
-  bool updateShouldNotify(NavController oldWidget) =>
-      navigateTo != oldWidget.navigateTo;
 }

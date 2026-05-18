@@ -1,6 +1,7 @@
 import 'dart:convert';
 import 'package:shared_preferences/shared_preferences.dart';
 import '../models/journal_entry.dart';
+import '../models/answered_prayer.dart';
 
 class StorageService {
   static late SharedPreferences _prefs;
@@ -9,7 +10,7 @@ class StorageService {
     _prefs = await SharedPreferences.getInstance();
   }
 
-  // ── Generic accessors ──────────────────────────────────────────────────────
+  // ── Generic ────────────────────────────────────────────────────────────────
 
   static String? getString(String key) => _prefs.getString(key);
   static Future<bool> setString(String key, String value) =>
@@ -64,6 +65,41 @@ class StorageService {
     await _prefs.setStringList(StorageKeys.journalEntries, raw);
   }
 
+  // ── Answered prayers ───────────────────────────────────────────────────────
+
+  static Future<List<AnsweredPrayer>> getAnsweredPrayers() async {
+    final raw = _prefs.getStringList(StorageKeys.answeredPrayers) ?? [];
+    return raw.map((s) {
+      final map = jsonDecode(s) as Map<String, dynamic>;
+      return AnsweredPrayer.fromJson(map);
+    }).toList();
+  }
+
+  static Future<void> saveAnsweredPrayer(AnsweredPrayer prayer) async {
+    final list = await getAnsweredPrayers();
+    list.add(prayer);
+    await _persistAnsweredPrayers(list);
+  }
+
+  static Future<void> updateAnsweredPrayer(AnsweredPrayer prayer) async {
+    final list = await getAnsweredPrayers();
+    final i = list.indexWhere((p) => p.id == prayer.id);
+    if (i != -1) list[i] = prayer;
+    await _persistAnsweredPrayers(list);
+  }
+
+  static Future<void> deleteAnsweredPrayer(String id) async {
+    final list = await getAnsweredPrayers();
+    list.removeWhere((p) => p.id == id);
+    await _persistAnsweredPrayers(list);
+  }
+
+  static Future<void> _persistAnsweredPrayers(
+      List<AnsweredPrayer> list) async {
+    final raw = list.map((p) => jsonEncode(p.toJson())).toList();
+    await _prefs.setStringList(StorageKeys.answeredPrayers, raw);
+  }
+
   // ── Streak ─────────────────────────────────────────────────────────────────
 
   static Future<int> checkAndUpdateStreak() async {
@@ -76,7 +112,8 @@ class StorageService {
     } else if (lastDate == today) {
       return streak;
     } else {
-      final yesterday = _dateKey(DateTime.now().subtract(const Duration(days: 1)));
+      final yesterday =
+          _dateKey(DateTime.now().subtract(const Duration(days: 1)));
       streak = (lastDate == yesterday) ? streak + 1 : 1;
     }
 
@@ -85,14 +122,28 @@ class StorageService {
     return streak;
   }
 
+  // ── Breathe sessions ───────────────────────────────────────────────────────
+
+  static int getBreatheSessions() =>
+      _prefs.getInt(StorageKeys.breatheSessions) ?? 0;
+
+  static Future<void> incrementBreatheSessions() async {
+    final current = getBreatheSessions();
+    await _prefs.setInt(StorageKeys.breatheSessions, current + 1);
+  }
+
+  // ── Helpers ────────────────────────────────────────────────────────────────
+
   static String _dateKey(DateTime dt) =>
-      '${dt.year}-${dt.month.toString().padLeft(2, '0')}-${dt.day.toString().padLeft(2, '0')}';
+      '${dt.year}-${dt.month.toString().padLeft(2, '0')}-'
+      '${dt.day.toString().padLeft(2, '0')}';
 }
 
 class StorageKeys {
   StorageKeys._();
 
   static const String journalEntries = 'journal_entries';
+  static const String answeredPrayers = 'answered_prayers';
   static const String notificationsEnabled = 'notifications_enabled';
   static const String reminderHour = 'reminder_hour';
   static const String reminderMinute = 'reminder_minute';
@@ -100,4 +151,5 @@ class StorageKeys {
   static const String lastVerseDate = 'last_verse_date';
   static const String streakCount = 'streak_count';
   static const String streakLastDate = 'streak_last_date';
+  static const String breatheSessions = 'breathe_sessions';
 }

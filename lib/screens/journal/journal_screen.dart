@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_animate/flutter_animate.dart';
+import 'package:google_fonts/google_fonts.dart';
 import 'package:intl/intl.dart';
 import '../../app.dart';
 import '../../constants/app_colors.dart';
@@ -27,7 +28,6 @@ class _JournalScreenState extends State<JournalScreen> {
 
   Future<void> _loadEntries() async {
     final entries = await StorageService.getEntries();
-    // Newest first — ISO 8601 strings sort lexicographically
     entries.sort((a, b) => b.createdAt.compareTo(a.createdAt));
     if (mounted) setState(() { _entries = entries; _loading = false; });
   }
@@ -40,6 +40,12 @@ class _JournalScreenState extends State<JournalScreen> {
     if (saved == true) _loadEntries();
   }
 
+  Future<void> _toggleFavorite(JournalEntry entry) async {
+    final updated = entry.copyWith(isFavorited: !entry.isFavorited);
+    await StorageService.updateEntry(updated);
+    _loadEntries();
+  }
+
   Future<void> _confirmDelete(JournalEntry entry) async {
     final confirmed = await showDialog<bool>(
       context: context,
@@ -48,15 +54,11 @@ class _JournalScreenState extends State<JournalScreen> {
         content: const Text(AppStrings.journalDeleteBody),
         actions: [
           TextButton(
-            style: TextButton.styleFrom(minimumSize: const Size(64, 48)),
             onPressed: () => Navigator.pop(ctx, false),
             child: const Text(AppStrings.journalDeleteCancel),
           ),
           TextButton(
-            style: TextButton.styleFrom(
-              minimumSize: const Size(64, 48),
-              foregroundColor: Colors.red,
-            ),
+            style: TextButton.styleFrom(foregroundColor: Colors.red),
             onPressed: () => Navigator.pop(ctx, true),
             child: const Text(AppStrings.journalDeleteConfirm),
           ),
@@ -71,51 +73,69 @@ class _JournalScreenState extends State<JournalScreen> {
 
   @override
   Widget build(BuildContext context) {
+    final topPad = MediaQuery.of(context).padding.top;
     final reduceMotion = MediaQuery.of(context).disableAnimations;
 
     return Scaffold(
-      appBar: AppBar(title: const Text(AppStrings.journalTitle)),
-      body: _loading
-          ? const Center(child: CircularProgressIndicator())
-          : _entries.isEmpty
-              ? _EmptyState(onWrite: () => _openEntry())
-              : ListView.separated(
-                  padding: const EdgeInsets.fromLTRB(16, 16, 16, 96),
-                  itemCount: _entries.length,
-                  separatorBuilder: (_, _) => const SizedBox(height: 10),
-                  itemBuilder: (_, i) {
-                    Widget tile = _JournalEntryTile(
-                      entry: _entries[i],
-                      onTap: () => _openEntry(entry: _entries[i]),
-                      onLongPress: () => _confirmDelete(_entries[i]),
-                    );
-                    if (!reduceMotion) {
-                      tile = tile
-                          .animate()
-                          .slideY(
-                            begin: 0.12,
-                            end: 0,
-                            duration: 280.ms,
-                            delay: (40 * i).ms,
-                            curve: Curves.easeOut,
-                          )
-                          .fadeIn(
-                            duration: 280.ms,
-                            delay: (40 * i).ms,
-                          );
-                    }
-                    return tile;
-                  },
+      backgroundColor: AppColors.background,
+      body: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Padding(
+            padding: EdgeInsets.fromLTRB(24, topPad + 28, 24, 20),
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Text(AppStrings.journalTitle, style: Theme.of(context).textTheme.headlineLarge),
+                const SizedBox(height: 4),
+                Text(
+                  AppStrings.journalSubtitle,
+                  style: GoogleFonts.nunito(color: AppColors.textSecondary, fontSize: 13),
                 ),
-      floatingActionButton: Semantics(
-        label: AppStrings.semanticNewEntryFab,
-        child: FloatingActionButton(
-          onPressed: () => _openEntry(),
-          backgroundColor: AppColors.accent,
-          foregroundColor: AppColors.text,
-          tooltip: AppStrings.semanticNewEntryFab,
-          child: const Icon(Icons.edit_outlined),
-        ),
+              ],
+            ),
+          ),
+          Expanded(
+            child: _loading
+                ? const Center(child: CircularProgressIndicator())
+                : _entries.isEmpty
+                    ? _EmptyState(onWrite: () => _openEntry())
+                    : ListView.separated(
+                        padding: const EdgeInsets.fromLTRB(20, 0, 20, 100),
+                        itemCount: _entries.length,
+                        separatorBuilder: (_, _) => const SizedBox(height: 12),
+                        itemBuilder: (_, i) {
+                          Widget tile = _JournalTile(
+                            entry: _entries[i],
+                            onTap: () => _openEntry(entry: _entries[i]),
+                            onLongPress: () => _confirmDelete(_entries[i]),
+                            onFavorite: () => _toggleFavorite(_entries[i]),
+                          );
+                          if (!reduceMotion) {
+                            tile = tile
+                                .animate()
+                                .slideY(
+                                  begin: 0.08,
+                                  end: 0,
+                                  duration: 260.ms,
+                                  delay: (40 * i).ms,
+                                  curve: Curves.easeOut,
+                                )
+                                .fadeIn(duration: 260.ms, delay: (40 * i).ms);
+                          }
+                          return tile;
+                        },
+                      ),
+          ),
+        ],
+      ),
+      floatingActionButton: FloatingActionButton(
+        onPressed: () => _openEntry(),
+        backgroundColor: AppColors.primary,
+        foregroundColor: Colors.white,
+        elevation: 2,
+        tooltip: AppStrings.semanticNewEntryFab,
+        child: const Icon(Icons.edit_outlined),
       ),
     );
   }
@@ -131,118 +151,156 @@ class _EmptyState extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return Center(
-      child: Column(
-        mainAxisAlignment: MainAxisAlignment.center,
-        children: [
-          ExcludeSemantics(
-            child: Icon(
-              Icons.eco_outlined,
+      child: Padding(
+        padding: const EdgeInsets.all(40),
+        child: Column(
+          mainAxisAlignment: MainAxisAlignment.center,
+          children: [
+            Icon(
+              Icons.menu_book_outlined,
               size: 52,
-              color: AppColors.accent.withValues(alpha: 0.6),
+              color: AppColors.primaryMid.withValues(alpha: 0.4),
             ),
-          ),
-          const SizedBox(height: 20),
-          Text(
-            AppStrings.journalSeedEmptyState,
-            style: Theme.of(context).textTheme.bodyMedium?.copyWith(
-                  color: AppColors.textLight,
-                  height: 1.6,
-                ),
-            textAlign: TextAlign.center,
-          ),
-          const SizedBox(height: 28),
-          TextButton(
-            style: TextButton.styleFrom(minimumSize: const Size(48, 48)),
-            onPressed: onWrite,
-            child: const Text(AppStrings.journalNewEntry),
-          ),
-        ],
+            const SizedBox(height: 20),
+            Text(
+              AppStrings.journalEmptyTitle,
+              style: GoogleFonts.lora(
+                color: AppColors.text,
+                fontSize: 18,
+                fontWeight: FontWeight.w600,
+              ),
+              textAlign: TextAlign.center,
+            ),
+            const SizedBox(height: 8),
+            Text(
+              AppStrings.journalEmptyBody,
+              style: GoogleFonts.nunito(
+                color: AppColors.textSecondary,
+                fontSize: 14,
+              ),
+              textAlign: TextAlign.center,
+            ),
+            const SizedBox(height: 28),
+            TextButton(
+              onPressed: onWrite,
+              child: const Text(AppStrings.journalNewEntry),
+            ),
+          ],
+        ),
       ),
     );
   }
 }
 
-// ── Entry tile ─────────────────────────────────────────────────────────────────
+// ── Journal entry tile ─────────────────────────────────────────────────────────
 
-class _JournalEntryTile extends StatelessWidget {
+class _JournalTile extends StatelessWidget {
   final JournalEntry entry;
   final VoidCallback onTap;
   final VoidCallback onLongPress;
+  final VoidCallback onFavorite;
 
-  const _JournalEntryTile({
+  const _JournalTile({
     required this.entry,
     required this.onTap,
     required this.onLongPress,
+    required this.onFavorite,
   });
 
   @override
   Widget build(BuildContext context) {
-    final textTheme = Theme.of(context).textTheme;
     final date = DateTime.tryParse(entry.createdAt) ?? DateTime.now();
-    final formattedDate = DateFormat('d MMM y').format(date);
-    final flatBody = entry.body.replaceAll('\n', ' ');
-    final preview =
-        flatBody.length > 80 ? '${flatBody.substring(0, 80)}…' : flatBody;
+    final formattedDate = DateFormat('MMM d, y').format(date);
+    final preview = entry.body.replaceAll('\n', ' ');
+    final previewText = preview.length > 90 ? '${preview.substring(0, 90)}…' : preview;
 
     return Semantics(
-      label: '${AppStrings.semanticJournalTile}: ${entry.title}, $formattedDate. '
-          '${AppStrings.semanticJournalTileDeleteHint}',
+      label: '${AppStrings.semanticJournalTile}: ${entry.title}. ${AppStrings.semanticJournalTileDeleteHint}',
       button: true,
       excludeSemantics: true,
-      child: Card(
-        clipBehavior: Clip.antiAlias,
-        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(14)),
-        child: InkWell(
-          onTap: onTap,
-          onLongPress: onLongPress,
-          child: Padding(
-            padding: const EdgeInsets.all(16),
-            child: Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                Row(
-                  children: [
-                    Expanded(
-                      child: Text(
-                        entry.title.isEmpty
-                            ? AppStrings.entryDefaultTitle
-                            : entry.title,
-                        style: textTheme.bodyLarge?.copyWith(
-                          fontWeight: FontWeight.w600,
-                          fontSize: 15,
-                        ),
-                        maxLines: 1,
-                        overflow: TextOverflow.ellipsis,
+      child: GestureDetector(
+        onTap: onTap,
+        onLongPress: onLongPress,
+        child: Container(
+          padding: const EdgeInsets.all(18),
+          decoration: BoxDecoration(
+            color: AppColors.surface,
+            borderRadius: BorderRadius.circular(16),
+            boxShadow: const [
+              BoxShadow(
+                color: Color(0x0A000000),
+                blurRadius: 8,
+                offset: Offset(0, 2),
+              ),
+            ],
+          ),
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              // ── Title + heart ──────────────────────────────────────────────
+              Row(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  Expanded(
+                    child: Text(
+                      entry.title.isEmpty ? AppStrings.entryDefaultTitle : entry.title,
+                      style: GoogleFonts.nunito(
+                        color: AppColors.text,
+                        fontSize: 15,
+                        fontWeight: FontWeight.w700,
+                      ),
+                      maxLines: 1,
+                      overflow: TextOverflow.ellipsis,
+                    ),
+                  ),
+                  const SizedBox(width: 8),
+                  GestureDetector(
+                    onTap: onFavorite,
+                    behavior: HitTestBehavior.opaque,
+                    child: Padding(
+                      padding: const EdgeInsets.only(left: 4),
+                      child: Icon(
+                        entry.isFavorited ? Icons.favorite : Icons.favorite_border,
+                        size: 18,
+                        color: entry.isFavorited
+                            ? Colors.redAccent
+                            : AppColors.navInactive,
                       ),
                     ),
-                    const SizedBox(width: 12),
-                    Text(
-                      formattedDate,
-                      style: textTheme.bodySmall?.copyWith(
-                        color: AppColors.textLight,
-                        fontSize: 12,
-                      ),
-                    ),
-                  ],
-                ),
-                if (preview.isNotEmpty) ...[
-                  const SizedBox(height: 6),
-                  Text(
-                    preview,
-                    style: textTheme.bodySmall?.copyWith(
-                      color: AppColors.textLight,
-                      height: 1.5,
-                    ),
-                    maxLines: 2,
-                    overflow: TextOverflow.ellipsis,
                   ),
                 ],
-                if (entry.mood != null) ...[
-                  const SizedBox(height: 10),
-                  _MoodPill(mood: entry.mood!),
+              ),
+              const SizedBox(height: 6),
+              // ── Date + mood tags ───────────────────────────────────────────
+              Row(
+                children: [
+                  Text(
+                    formattedDate,
+                    style: GoogleFonts.nunito(
+                      color: AppColors.textSecondary,
+                      fontSize: 12,
+                    ),
+                  ),
+                  if (entry.mood != null) ...[
+                    const SizedBox(width: 8),
+                    _MoodTag(mood: entry.mood!),
+                  ],
                 ],
+              ),
+              if (previewText.isNotEmpty) ...[
+                const SizedBox(height: 8),
+                Text(
+                  previewText,
+                  style: GoogleFonts.nunito(
+                    color: AppColors.textSecondary,
+                    fontSize: 13,
+                    height: 1.5,
+                  ),
+                  maxLines: 2,
+                  overflow: TextOverflow.ellipsis,
+                ),
               ],
-            ),
+            ],
           ),
         ),
       ),
@@ -250,26 +308,37 @@ class _JournalEntryTile extends StatelessWidget {
   }
 }
 
-class _MoodPill extends StatelessWidget {
+// ── Mood tag ───────────────────────────────────────────────────────────────────
+
+class _MoodTag extends StatelessWidget {
   final String mood;
 
-  const _MoodPill({required this.mood});
+  const _MoodTag({required this.mood});
+
+  Color _bg() => switch (mood) {
+        'anxiety' => AppColors.tagAnxiety,
+        'peace' => AppColors.tagPeace,
+        'gratitude' => AppColors.tagGratitude,
+        'hope' => AppColors.tagHope,
+        'grief' => AppColors.tagGrief,
+        _ => AppColors.tagUncertain,
+      };
 
   @override
   Widget build(BuildContext context) {
     return Container(
-      padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 3),
+      padding: const EdgeInsets.symmetric(horizontal: 9, vertical: 3),
       decoration: BoxDecoration(
-        color: AppColors.accent.withValues(alpha: 0.14),
-        borderRadius: BorderRadius.circular(100),
+        color: _bg(),
+        borderRadius: BorderRadius.circular(20),
       ),
       child: Text(
         AppStrings.moodLabel(mood),
-        style: Theme.of(context).textTheme.bodySmall?.copyWith(
-              fontSize: 11,
-              color: AppColors.text,
-              fontWeight: FontWeight.w500,
-            ),
+        style: GoogleFonts.nunito(
+          color: AppColors.text,
+          fontSize: 11,
+          fontWeight: FontWeight.w600,
+        ),
       ),
     );
   }
