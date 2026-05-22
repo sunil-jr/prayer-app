@@ -8,6 +8,8 @@ import 'screens/wellness/wellness_screen.dart';
 import 'screens/breathe/breathe_screen.dart';
 import 'screens/journal/journal_screen.dart';
 import 'screens/settings/settings_screen.dart';
+import 'screens/onboarding/onboarding_flow.dart';
+import 'services/storage_service.dart';
 
 PageRoute<T> fadeRoute<T extends Object?>(Widget page) => PageRouteBuilder<T>(
       transitionDuration: const Duration(milliseconds: 280),
@@ -19,6 +21,9 @@ PageRoute<T> fadeRoute<T extends Object?>(Widget page) => PageRouteBuilder<T>(
       ),
     );
 
+// ── Set to false before shipping to production ─────────────────────────────────
+const bool kTestOnboarding = true;
+
 class SoulGraceApp extends StatelessWidget {
   const SoulGraceApp({super.key});
 
@@ -28,7 +33,11 @@ class SoulGraceApp extends StatelessWidget {
       title: AppStrings.appName,
       debugShowCheckedModeBanner: false,
       theme: AppTheme.light,
-      home: const MainShell(),
+      home: kTestOnboarding
+          ? const OnboardingFlow()
+          : StorageService.getBool(StorageKeys.onboardingCompleted) == true
+              ? const MainShell()
+              : const OnboardingFlow(),
     );
   }
 }
@@ -51,7 +60,9 @@ class _MainShellState extends State<MainShell> {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
+      extendBody: true,
       body: IndexedStack(
+        sizing: StackFit.expand,
         index: _currentIndex,
         children: [
           HomeScreen(onNavigate: _navigateTo),

@@ -152,4 +152,13 @@ class StorageKeys {
   static const String streakCount = 'streak_count';
   static const String streakLastDate = 'streak_last_date';
   static const String breatheSessions = 'breathe_sessions';
+
+  // ── Onboarding ─────────────────────────────────────────────────────────────
+  static const String onboardingCompleted = 'onboarding_completed';
+  static const String onboardingName = 'onboarding_name';
+  static const String onboardingMood = 'onboarding_mood';
+  static const String onboardingPrayFrequency = 'onboarding_pray_frequency';
+  static const String onboardingFaithState = 'onboarding_faith_state';
+  static const String onboardingBarriers = 'onboarding_barriers';
+  static const String onboardingGoals = 'onboarding_goals';
 }

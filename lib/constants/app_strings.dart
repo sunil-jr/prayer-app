@@ -115,6 +115,8 @@ class AppStrings {
       'Your mind is calm. Open your heart.';
   static const String breatheOpenPrayer = 'Open a Prayer';
   static const String breatheAgain = 'Breathe Again';
+  static const String breatheBeforeAPrayer = 'Breathe Before a Prayer';
+  static const String breatheCancel = 'Cancel';
 
   // ── Journal ────────────────────────────────────────────────────────────────
   static const String journalTitle = 'Prayer Journal';
@@ -175,6 +177,82 @@ class AppStrings {
   static const String semanticJournalTileDeleteHint = 'Long press to delete';
   static String semanticStreakBadge(int n) =>
       'Current streak: $n ${n == 1 ? 'day' : 'days'}';
+
+  // ── Onboarding ─────────────────────────────────────────────────────────────
+  static const String onboardingHookLine1 = 'life gets loud.';
+  static const String onboardingHookLine2 = 'God gets quiet.';
+  static const String onboardingHookLine3 = "let's change that.";
+  static const String onboardingHookSub =
+      'Are you ready to begin your journey with God?';
+  static const String onboardingBegin = "Let's Begin";
+  static const String onboardingContinue = 'Continue';
+
+  static const String onboardingQ1Question = 'what should we call you?';
+  static const String onboardingQ1Hint = 'Your name';
+
+  static const String onboardingQ2Question =
+      'what brings you to SoulGrace today?';
+
+  static const String onboardingQ3Question =
+      'how often do you currently pray?';
+  static const String onboardingQ3Unit = 'days a week';
+  static const String onboardingQ3Never = 'never';
+  static const String onboardingQ3Daily = 'every day';
+
+  static const String onboardingQ4Question =
+      'how would you describe your faith right now?';
+
+  static const String onboardingQ5Question =
+      'what gets in the way of your prayer life?';
+  static const String onboardingQ5Sub = 'Select all that apply';
+
+  static const String onboardingQ6Question =
+      'what do you want from SoulGrace?';
+  static const String onboardingQ6Sub = 'Select all that apply';
+
+  static const String onboardingLoadingTitle = 'preparing your journey...';
+  static const List<String> onboardingLoadingMessages = [
+    'rooting you in the word...',
+    'making sure this is tailored to you...',
+    'gathering prayers for your heart...',
+    'your experience is almost ready...',
+  ];
+
+  static const String onboardingBreathePrompt = 'before we begin, take a breath';
+  static const String onboardingBreatheIn = 'breathe in...';
+  static const String onboardingBreatheOut = 'breathe out...';
+
+  static const String onboardingPrayerTitle = 'a prayer for you';
+  static const String onboardingPrayerAmen = 'Amen';
+  static const String onboardingPrayerNext = 'Continue';
+
+  static const String onboardingVerseTitle = "today's verse";
+  static const String onboardingVerseNext = 'Continue';
+
+  static const String onboardingStreakHeading = 'your journey begins.';
+  static String onboardingStreakDay(int n) => 'Day $n';
+  static const String onboardingStreakSub =
+      'Keep showing up. God is faithful.';
+  static const String onboardingStreakCta = 'Continue Your Journey With God';
+
+  static const String onboardingPaywallTitle = 'SoulGrace Pro';
+  static const String onboardingPaywallSub = 'Deepen your faith. Every day.';
+  static const String onboardingPaywallFeature1 = 'Unlimited prayer tracking';
+  static const String onboardingPaywallFeature2 =
+      'Daily personalized prayers & verses';
+  static const String onboardingPaywallFeature3 =
+      'Guided breathing & meditation';
+  static const String onboardingPaywallFeature4 =
+      'Spiritual wellness insights';
+  static const String onboardingPaywallMonthly = 'Monthly';
+  static const String onboardingPaywallMonthlyPrice = r'$4.99 / month';
+  static const String onboardingPaywallYearly = 'Yearly';
+  static const String onboardingPaywallYearlyPrice = r'$29.99 / year';
+  static const String onboardingPaywallYearlyBadge = 'Most Popular';
+  static const String onboardingPaywallLifetime = 'Lifetime';
+  static const String onboardingPaywallLifetimePrice = r'$79.99 once';
+  static const String onboardingPaywallCta = 'Start My Journey';
+  static const String onboardingPaywallSkip = 'Maybe later';
 
   // ── Deprecated / legacy (kept for EntryScreen / MoodSelector) ─────────────
   static const String journalSeedEmptyState =
