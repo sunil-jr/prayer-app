@@ -1,3 +1,4 @@
+import 'dart:async';
 import 'package:flutter/material.dart';
 import 'package:google_fonts/google_fonts.dart';
 import '../../../constants/app_colors.dart';
@@ -6,24 +7,74 @@ import '../../../data/content.dart';
 import '../../../models/prayer_model.dart';
 import 'onboarding_shared.dart';
 
-class PrayerRevealPage extends StatelessWidget {
+class PrayerRevealPage extends StatefulWidget {
   final String mood;
   final VoidCallback onNext;
 
   const PrayerRevealPage({super.key, required this.mood, required this.onNext});
 
+  @override
+  State<PrayerRevealPage> createState() => _PrayerRevealPageState();
+}
+
+class _PrayerRevealPageState extends State<PrayerRevealPage> {
+  late final PrayerModel _prayer;
+  String _displayedBody = '';
+  bool _isTypingDone = false;
+  int _charIndex = 0;
+  Timer? _typingTimer;
+
+  @override
+  void initState() {
+    super.initState();
+    _prayer = _pick();
+    _startTyping();
+  }
+
+  @override
+  void dispose() {
+    _typingTimer?.cancel();
+    super.dispose();
+  }
+
   PrayerModel _pick() {
     final matched = ContentData.prayers
-        .where((p) => p.moods.contains(mood))
+        .where((p) => p.moods.contains(widget.mood))
         .toList();
     if (matched.isNotEmpty) return matched.first;
     return ContentData.prayers.first;
   }
 
+  void _startTyping() {
+    _typingTimer = Timer.periodic(const Duration(milliseconds: 30), (t) {
+      if (!mounted) {
+        t.cancel();
+        return;
+      }
+      if (_charIndex >= _prayer.body.length) {
+        t.cancel();
+        setState(() => _isTypingDone = true);
+        return;
+      }
+      setState(() {
+        _charIndex++;
+        _displayedBody = _prayer.body.substring(0, _charIndex);
+      });
+    });
+  }
+
+  void _skipTyping() {
+    if (_isTypingDone) return;
+    _typingTimer?.cancel();
+    setState(() {
+      _displayedBody = _prayer.body;
+      _charIndex = _prayer.body.length;
+      _isTypingDone = true;
+    });
+  }
+
   @override
   Widget build(BuildContext context) {
-    final prayer = _pick();
-
     return Scaffold(
       backgroundColor: AppColors.background,
       body: SafeArea(
@@ -58,9 +109,9 @@ class PrayerRevealPage extends StatelessWidget {
 
               const SizedBox(height: 20),
 
-              // ── Prayer title ───────────────────────────────────────────────
+              // ── Prayer title (instant) ─────────────────────────────────────
               Text(
-                prayer.title,
+                _prayer.title,
                 style: GoogleFonts.lora(
                   color: AppColors.text,
                   fontSize: 22,
@@ -71,15 +122,19 @@ class PrayerRevealPage extends StatelessWidget {
 
               const SizedBox(height: 24),
 
-              // ── Prayer body ────────────────────────────────────────────────
+              // ── Prayer body (typewriter) ───────────────────────────────────
               Expanded(
-                child: SingleChildScrollView(
-                  child: Text(
-                    prayer.body,
-                    style: GoogleFonts.lora(
-                      color: AppColors.text,
-                      fontSize: 17,
-                      height: 1.85,
+                child: GestureDetector(
+                  onTap: _skipTyping,
+                  behavior: HitTestBehavior.opaque,
+                  child: SingleChildScrollView(
+                    child: Text(
+                      _displayedBody,
+                      style: GoogleFonts.lora(
+                        color: AppColors.text,
+                        fontSize: 17,
+                        height: 1.85,
+                      ),
                     ),
                   ),
                 ),
@@ -87,22 +142,33 @@ class PrayerRevealPage extends StatelessWidget {
 
               const SizedBox(height: 24),
 
-              // ── Amen + Continue ────────────────────────────────────────────
-              Center(
-                child: Text(
-                  AppStrings.onboardingPrayerAmen,
-                  style: GoogleFonts.lora(
-                    color: AppColors.primaryMid,
-                    fontSize: 15,
-                    fontStyle: FontStyle.italic,
+              // ── Amen + Continue (hidden during typing) ─────────────────────
+              IgnorePointer(
+                ignoring: !_isTypingDone,
+                child: AnimatedOpacity(
+                  opacity: _isTypingDone ? 1.0 : 0.0,
+                  duration: const Duration(milliseconds: 600),
+                  child: Column(
+                    children: [
+                      Center(
+                        child: Text(
+                          AppStrings.onboardingPrayerAmen,
+                          style: GoogleFonts.lora(
+                            color: AppColors.primaryMid,
+                            fontSize: 15,
+                            fontStyle: FontStyle.italic,
+                          ),
+                        ),
+                      ),
+                      const SizedBox(height: 16),
+                      OnboardingContinueButton(
+                        enabled: true,
+                        onTap: widget.onNext,
+                        label: AppStrings.onboardingPrayerNext,
+                      ),
+                    ],
                   ),
                 ),
-              ),
-              const SizedBox(height: 16),
-              OnboardingContinueButton(
-                enabled: true,
-                onTap: onNext,
-                label: AppStrings.onboardingPrayerNext,
               ),
             ],
           ),

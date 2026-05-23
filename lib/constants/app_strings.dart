@@ -218,9 +218,14 @@ class AppStrings {
     'your experience is almost ready...',
   ];
 
-  static const String onboardingBreathePrompt = 'before we begin, take a breath';
-  static const String onboardingBreatheIn = 'breathe in...';
-  static const String onboardingBreatheOut = 'breathe out...';
+  static const String onboardingBreathePrompt = 'Before we begin, take a breath';
+  static const String onboardingBreatheIntroSub =
+      'A moment of stillness before prayer goes a long way.';
+  static const String onboardingBreatheStart = 'Start Breathing';
+  static const String onboardingBreatheSkip = 'Continue without breathing';
+  static const String onboardingBreatheIn = 'Breathe in...';
+  static const String onboardingBreatheOut = 'Breathe out...';
+  static const String onboardingBreatheDone = 'Great. Continue with the Prayer';
 
   static const String onboardingPrayerTitle = 'a prayer for you';
   static const String onboardingPrayerAmen = 'Amen';

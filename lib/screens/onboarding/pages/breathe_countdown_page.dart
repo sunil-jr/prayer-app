@@ -4,7 +4,7 @@ import 'package:google_fonts/google_fonts.dart';
 import '../../../constants/app_colors.dart';
 import '../../../constants/app_strings.dart';
 
-enum _Phase { countdown3, countdown2, countdown1, breatheIn, breatheOut }
+enum _Phase { intro, countdown3, countdown2, countdown1, breatheIn, breatheOut, done }
 
 class BreatheCountdownPage extends StatefulWidget {
   final VoidCallback onComplete;
@@ -16,23 +16,20 @@ class BreatheCountdownPage extends StatefulWidget {
 }
 
 class _BreatheCountdownPageState extends State<BreatheCountdownPage> {
-  _Phase _phase = _Phase.countdown3;
+  _Phase _phase = _Phase.intro;
   Timer? _timer;
+  bool _circleReady = false;
 
   static const Duration _countdownStep = Duration(seconds: 1);
   static const Duration _breatheDuration = Duration(seconds: 4);
 
-  static const double _minCircle = 110;
+  static const double _minCircle = 20;
   static const double _maxCircle = 210;
 
+  // On first frame of breatheIn, _circleReady is false so we render at _minCircle.
+  // The post-frame callback sets it true, triggering the expand animation.
   double get _circleSize =>
-      _phase == _Phase.breatheIn ? _maxCircle : _minCircle;
-
-  @override
-  void initState() {
-    super.initState();
-    _scheduleNext();
-  }
+      (_phase == _Phase.breatheIn && _circleReady) ? _maxCircle : _minCircle;
 
   @override
   void dispose() {
@@ -40,20 +37,27 @@ class _BreatheCountdownPageState extends State<BreatheCountdownPage> {
     super.dispose();
   }
 
+  void _startBreathing() {
+    setState(() => _phase = _Phase.countdown3);
+    _scheduleNext();
+  }
+
   void _scheduleNext() {
     _timer?.cancel();
-    final duration = (_phase == _Phase.breatheIn || _phase == _Phase.breatheOut)
-        ? _breatheDuration
-        : _countdownStep;
+    final duration =
+        (_phase == _Phase.breatheIn || _phase == _Phase.breatheOut)
+            ? _breatheDuration
+            : _countdownStep;
     _timer = Timer(duration, _advance);
   }
 
   void _advance() {
     if (!mounted) return;
 
-    // Determine next phase
     _Phase? next;
     switch (_phase) {
+      case _Phase.intro:
+        return;
       case _Phase.countdown3:
         next = _Phase.countdown2;
       case _Phase.countdown2:
@@ -63,27 +67,50 @@ class _BreatheCountdownPageState extends State<BreatheCountdownPage> {
       case _Phase.breatheIn:
         next = _Phase.breatheOut;
       case _Phase.breatheOut:
-        widget.onComplete();
+        next = _Phase.done;
+      case _Phase.done:
         return;
     }
 
-    setState(() => _phase = next!);
-    _scheduleNext();
+    setState(() {
+      _phase = next!;
+      if (_phase == _Phase.breatheIn) _circleReady = false;
+    });
+
+    if (_phase == _Phase.breatheIn) {
+      WidgetsBinding.instance.addPostFrameCallback((_) {
+        if (mounted) setState(() => _circleReady = true);
+      });
+    }
+
+    if (_phase != _Phase.done) _scheduleNext();
   }
 
   @override
   Widget build(BuildContext context) {
-    return Container(
-      decoration: const BoxDecoration(
-        gradient: LinearGradient(
-          begin: Alignment.topLeft,
-          end: Alignment.bottomRight,
-          colors: [AppColors.primaryDeep, AppColors.primary, AppColors.primaryMid],
-          stops: [0.0, 0.55, 1.0],
+    return DefaultTextStyle.merge(
+      style: const TextStyle(decoration: TextDecoration.none),
+      child: Container(
+        decoration: const BoxDecoration(
+          gradient: LinearGradient(
+            begin: Alignment.topLeft,
+            end: Alignment.bottomRight,
+            colors: [AppColors.primaryDeep, AppColors.primary, AppColors.primaryMid],
+            stops: [0.0, 0.55, 1.0],
+          ),
         ),
-      ),
-      child: SafeArea(
-        child: _isCountdown ? _buildCountdown() : _buildBreathe(),
+        child: SafeArea(
+          child: AnimatedSwitcher(
+            duration: const Duration(milliseconds: 350),
+            child: _phase == _Phase.intro
+                ? _buildIntro()
+                : _phase == _Phase.done
+                    ? _buildDone()
+                    : _isCountdown
+                        ? _buildCountdown()
+                        : _buildBreathe(),
+          ),
+        ),
       ),
     );
   }
@@ -100,22 +127,113 @@ class _BreatheCountdownPageState extends State<BreatheCountdownPage> {
         _ => '',
       };
 
+  // ── Intro ────────────────────────────────────────────────────────────────────
+
+  Widget _buildIntro() {
+    return Padding(
+      key: const ValueKey('intro'),
+      padding: const EdgeInsets.symmetric(horizontal: 36),
+      child: Column(
+        mainAxisAlignment: MainAxisAlignment.center,
+        children: [
+          Text(
+            AppStrings.onboardingBreathePrompt,
+            style: GoogleFonts.lora(
+              color: Colors.white,
+              fontSize: 28,
+              fontWeight: FontWeight.w700,
+              height: 1.35,
+            ),
+            textAlign: TextAlign.center,
+          ),
+          const SizedBox(height: 14),
+          Text(
+            AppStrings.onboardingBreatheIntroSub,
+            style: GoogleFonts.nunito(
+              color: Colors.white.withValues(alpha: 0.72),
+              fontSize: 15,
+              height: 1.6,
+            ),
+            textAlign: TextAlign.center,
+          ),
+          const SizedBox(height: 52),
+
+          // ── Start Breathing ────────────────────────────────────────────────
+          SizedBox(
+            width: double.infinity,
+            child: ElevatedButton(
+              onPressed: _startBreathing,
+              style: ElevatedButton.styleFrom(
+                backgroundColor: Colors.white,
+                foregroundColor: AppColors.primary,
+                shape: RoundedRectangleBorder(
+                  borderRadius: BorderRadius.circular(30),
+                ),
+                padding: const EdgeInsets.symmetric(vertical: 16),
+                elevation: 0,
+              ),
+              child: Text(
+                AppStrings.onboardingBreatheStart,
+                style: GoogleFonts.nunito(
+                  fontSize: 16,
+                  fontWeight: FontWeight.w700,
+                ),
+              ),
+            ),
+          ),
+
+          const SizedBox(height: 14),
+
+          // ── Skip ──────────────────────────────────────────────────────────
+          SizedBox(
+            width: double.infinity,
+            child: OutlinedButton(
+              onPressed: widget.onComplete,
+              style: OutlinedButton.styleFrom(
+                foregroundColor: Colors.white,
+                side: BorderSide(
+                  color: Colors.white.withValues(alpha: 0.5),
+                  width: 1.5,
+                ),
+                shape: RoundedRectangleBorder(
+                  borderRadius: BorderRadius.circular(30),
+                ),
+                padding: const EdgeInsets.symmetric(vertical: 16),
+              ),
+              child: Text(
+                AppStrings.onboardingBreatheSkip,
+                style: GoogleFonts.nunito(
+                  fontSize: 15,
+                  fontWeight: FontWeight.w600,
+                  color: Colors.white.withValues(alpha: 0.88),
+                ),
+              ),
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+
+  // ── Countdown ────────────────────────────────────────────────────────────────
+
   Widget _buildCountdown() {
     return Column(
+      key: const ValueKey('countdown'),
       mainAxisAlignment: MainAxisAlignment.center,
       children: [
         Text(
           AppStrings.onboardingBreathePrompt,
           style: GoogleFonts.nunito(
-            color: Colors.white.withValues(alpha: 0.75),
-            fontSize: 16,
+            color: Colors.white.withValues(alpha: 0.72),
+            fontSize: 15,
             fontWeight: FontWeight.w500,
           ),
           textAlign: TextAlign.center,
         ),
         const SizedBox(height: 48),
         AnimatedSwitcher(
-          duration: const Duration(milliseconds: 300),
+          duration: const Duration(milliseconds: 280),
           transitionBuilder: (child, anim) => ScaleTransition(
             scale: anim,
             child: FadeTransition(opacity: anim, child: child),
@@ -135,15 +253,18 @@ class _BreatheCountdownPageState extends State<BreatheCountdownPage> {
     );
   }
 
+  // ── Breathe ──────────────────────────────────────────────────────────────────
+
   Widget _buildBreathe() {
     final label = _phase == _Phase.breatheIn
         ? AppStrings.onboardingBreatheIn
         : AppStrings.onboardingBreatheOut;
 
     return Column(
+      key: const ValueKey('breathe'),
       mainAxisAlignment: MainAxisAlignment.center,
       children: [
-        // Stroke-only circle — consistent with the main BreatheScreen
+        // Circle starts tiny (pea), expands on inhale, contracts on exhale
         AnimatedContainer(
           duration: _breatheDuration,
           curve: Curves.easeInOut,
@@ -167,7 +288,7 @@ class _BreatheCountdownPageState extends State<BreatheCountdownPage> {
         ),
         const SizedBox(height: 52),
         AnimatedSwitcher(
-          duration: const Duration(milliseconds: 400),
+          duration: const Duration(milliseconds: 350),
           child: Text(
             label,
             key: ValueKey(label),
@@ -179,6 +300,63 @@ class _BreatheCountdownPageState extends State<BreatheCountdownPage> {
           ),
         ),
       ],
+    );
+  }
+
+  // ── Done ─────────────────────────────────────────────────────────────────────
+
+  Widget _buildDone() {
+    return Padding(
+      key: const ValueKey('done'),
+      padding: const EdgeInsets.symmetric(horizontal: 36),
+      child: Column(
+        mainAxisAlignment: MainAxisAlignment.center,
+        children: [
+          Container(
+            width: 72,
+            height: 72,
+            decoration: BoxDecoration(
+              color: Colors.white.withValues(alpha: 0.18),
+              shape: BoxShape.circle,
+            ),
+            child: const Icon(Icons.favorite, color: Colors.white, size: 32),
+          ),
+          const SizedBox(height: 28),
+          Text(
+            AppStrings.onboardingBreatheDone,
+            style: GoogleFonts.lora(
+              color: Colors.white,
+              fontSize: 22,
+              fontWeight: FontWeight.w700,
+              height: 1.4,
+            ),
+            textAlign: TextAlign.center,
+          ),
+          const SizedBox(height: 48),
+          SizedBox(
+            width: double.infinity,
+            child: ElevatedButton(
+              onPressed: widget.onComplete,
+              style: ElevatedButton.styleFrom(
+                backgroundColor: Colors.white,
+                foregroundColor: AppColors.primary,
+                shape: RoundedRectangleBorder(
+                  borderRadius: BorderRadius.circular(30),
+                ),
+                padding: const EdgeInsets.symmetric(vertical: 16),
+                elevation: 0,
+              ),
+              child: Text(
+                AppStrings.onboardingBreatheDone,
+                style: GoogleFonts.nunito(
+                  fontSize: 16,
+                  fontWeight: FontWeight.w700,
+                ),
+              ),
+            ),
+          ),
+        ],
+      ),
     );
   }
 }
