@@ -10,6 +10,7 @@ class AppStrings {
   static const String navBreathe = 'Breathe';
   static const String navJournal = 'Journal';
   static const String navSettings = 'Settings';
+  static const String navPray = 'Pray';
 
   // ── Home ───────────────────────────────────────────────────────────────────
   static const String homeGreetingMorning = 'Good morning';

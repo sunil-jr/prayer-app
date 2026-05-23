@@ -8,13 +8,15 @@ import '../../data/content.dart';
 import '../../models/answered_prayer.dart';
 import '../../models/verse_model.dart';
 import '../../screens/prayer/prayer_detail_screen.dart';
+import '../../screens/settings/settings_screen.dart';
 import '../../services/mood_filter_service.dart';
 import '../../services/storage_service.dart';
 
 class HomeScreen extends StatefulWidget {
   final void Function(int index) onNavigate;
+  final VoidCallback onBreathe;
 
-  const HomeScreen({super.key, required this.onNavigate});
+  const HomeScreen({super.key, required this.onNavigate, required this.onBreathe});
 
   @override
   State<HomeScreen> createState() => _HomeScreenState();
@@ -102,6 +104,10 @@ class _HomeScreenState extends State<HomeScreen> {
             selectedMood: _selectedMood,
             moods: _moods,
             onMoodSelected: _onMoodSelected,
+            onSettings: () => Navigator.push(
+              context,
+              fadeRoute(const SettingsScreen()),
+            ),
           ),
           Padding(
             padding: const EdgeInsets.fromLTRB(20, 20, 20, 0),
@@ -116,7 +122,7 @@ class _HomeScreenState extends State<HomeScreen> {
                 const SizedBox(height: 16),
                 _DailyVerseCard(verse: _verse),
                 const SizedBox(height: 16),
-                _BreatheBanner(onTap: () => widget.onNavigate(3)),
+                _BreatheBanner(onTap: widget.onBreathe),
                 const SizedBox(height: 16),
                 _TodaysPrayerCard(),
                 if (_recentAnswered != null) ...[
@@ -140,12 +146,14 @@ class _GradientHeader extends StatelessWidget {
   final String? selectedMood;
   final List<(String, String)> moods;
   final void Function(String) onMoodSelected;
+  final VoidCallback onSettings;
 
   const _GradientHeader({
     required this.greeting,
     required this.selectedMood,
     required this.moods,
     required this.onMoodSelected,
+    required this.onSettings,
   });
 
   @override
@@ -164,13 +172,27 @@ class _GradientHeader extends StatelessWidget {
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          Text(
-            greeting,
-            style: GoogleFonts.lora(
-              color: Colors.white,
-              fontSize: 30,
-              fontWeight: FontWeight.w700,
-            ),
+          Row(
+            crossAxisAlignment: CrossAxisAlignment.center,
+            children: [
+              Expanded(
+                child: Text(
+                  greeting,
+                  style: GoogleFonts.lora(
+                    color: Colors.white,
+                    fontSize: 30,
+                    fontWeight: FontWeight.w700,
+                  ),
+                ),
+              ),
+              IconButton(
+                icon: const Icon(Icons.settings_outlined, color: Colors.white70, size: 22),
+                onPressed: onSettings,
+                tooltip: AppStrings.navSettings,
+                padding: EdgeInsets.zero,
+                constraints: const BoxConstraints(),
+              ),
+            ],
           ),
           const SizedBox(height: 4),
           Text(

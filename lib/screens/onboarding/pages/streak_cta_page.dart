@@ -144,7 +144,7 @@ class _StreakBadge extends StatelessWidget {
             ),
           ),
           Text(
-            'Current Streak',
+            AppStrings.settingsStreakTitle,
             style: GoogleFonts.nunito(
               color: AppColors.textSecondary,
               fontSize: 13,

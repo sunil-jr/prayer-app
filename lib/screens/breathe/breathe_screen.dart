@@ -9,9 +9,7 @@ import '../prayer/prayer_detail_screen.dart';
 import '../../app.dart';
 
 class BreatheScreen extends StatefulWidget {
-  final VoidCallback onNavigateToPrayer;
-
-  const BreatheScreen({super.key, required this.onNavigateToPrayer});
+  const BreatheScreen({super.key});
 
   @override
   State<BreatheScreen> createState() => _BreatheScreenState();
@@ -103,22 +101,11 @@ class _BreatheScreenState extends State<BreatheScreen> {
         ),
       ),
       child: SafeArea(
-        bottom: false,
-        child: Column(
-          children: [
-            Expanded(
-              child: _phase == _Phase.intro
-                  ? _buildIntro()
-                  : _phase == _Phase.complete
-                      ? _buildComplete()
-                      : _buildActive(),
-            ),
-            SizedBox(
-              height: MediaQuery.of(context).padding.bottom +
-                  kBottomNavigationBarHeight,
-            ),
-          ],
-        ),
+        child: _phase == _Phase.intro
+            ? _buildIntro()
+            : _phase == _Phase.complete
+                ? _buildComplete()
+                : _buildActive(),
       ),
     );
   }
@@ -126,83 +113,100 @@ class _BreatheScreenState extends State<BreatheScreen> {
   // ── Intro state ──────────────────────────────────────────────────────────────
 
   Widget _buildIntro() {
-    return Padding(
-      padding: const EdgeInsets.symmetric(horizontal: 36),
-      child: Column(
-        mainAxisAlignment: MainAxisAlignment.center,
-        children: [
-          Text(
-            AppStrings.breatheTitle,
-            style: GoogleFonts.lora(
-              color: Colors.white,
-              fontSize: 32,
-              fontWeight: FontWeight.w700,
-            ),
-            textAlign: TextAlign.center,
+    return Column(
+      children: [
+        Align(
+          alignment: Alignment.centerRight,
+          child: IconButton(
+            icon: const Icon(Icons.close, color: Colors.white70),
+            onPressed: () => Navigator.pop(context),
+            tooltip: 'Close',
           ),
-          const SizedBox(height: 20),
-          Text(
-            AppStrings.breatheDescription,
-            style: GoogleFonts.nunito(
-              color: Colors.white.withValues(alpha: 0.78),
-              fontSize: 15,
-              height: 1.6,
-            ),
-            textAlign: TextAlign.center,
-          ),
-          const SizedBox(height: 52),
+        ),
+        Expanded(
+          child: Padding(
+            padding: const EdgeInsets.symmetric(horizontal: 36),
+            child: Column(
+              mainAxisAlignment: MainAxisAlignment.center,
+              children: [
+                Text(
+                  AppStrings.breatheTitle,
+                  style: GoogleFonts.lora(
+                    color: Colors.white,
+                    fontSize: 32,
+                    fontWeight: FontWeight.w700,
+                  ),
+                  textAlign: TextAlign.center,
+                ),
+                const SizedBox(height: 20),
+                Text(
+                  AppStrings.breatheDescription,
+                  style: GoogleFonts.nunito(
+                    color: Colors.white.withValues(alpha: 0.78),
+                    fontSize: 15,
+                    height: 1.6,
+                  ),
+                  textAlign: TextAlign.center,
+                ),
+                const SizedBox(height: 52),
 
-          // ── Begin ──────────────────────────────────────────────────────────
-          SizedBox(
-            width: double.infinity,
-            child: ElevatedButton(
-              onPressed: () => _start(),
-              style: ElevatedButton.styleFrom(
-                backgroundColor: Colors.white,
-                foregroundColor: AppColors.primary,
-                shape: RoundedRectangleBorder(
-                  borderRadius: BorderRadius.circular(30),
+                // ── Begin ──────────────────────────────────────────────────
+                SizedBox(
+                  width: double.infinity,
+                  child: ElevatedButton(
+                    onPressed: () => _start(),
+                    style: ElevatedButton.styleFrom(
+                      backgroundColor: Colors.white,
+                      foregroundColor: AppColors.primary,
+                      shape: RoundedRectangleBorder(
+                        borderRadius: BorderRadius.circular(30),
+                      ),
+                      padding: const EdgeInsets.symmetric(vertical: 16),
+                      elevation: 0,
+                    ),
+                    child: Text(
+                      AppStrings.breatheBegin,
+                      style: GoogleFonts.nunito(
+                        fontSize: 16,
+                        fontWeight: FontWeight.w700,
+                      ),
+                    ),
+                  ),
                 ),
-                padding: const EdgeInsets.symmetric(vertical: 16),
-                elevation: 0,
-              ),
-              child: Text(
-                AppStrings.breatheBegin,
-                style: GoogleFonts.nunito(
-                  fontSize: 16,
-                  fontWeight: FontWeight.w700,
+
+                const SizedBox(height: 14),
+
+                // ── Breathe before a prayer ────────────────────────────────
+                SizedBox(
+                  width: double.infinity,
+                  child: OutlinedButton(
+                    onPressed: () => _start(forPrayer: true),
+                    style: OutlinedButton.styleFrom(
+                      foregroundColor: Colors.white,
+                      side: BorderSide(
+                        color: Colors.white.withValues(alpha: 0.55),
+                        width: 1.5,
+                      ),
+                      shape: RoundedRectangleBorder(
+                        borderRadius: BorderRadius.circular(30),
+                      ),
+                      padding: const EdgeInsets.symmetric(vertical: 16),
+                    ),
+                    child: Text(
+                      AppStrings.breatheBeforeAPrayer,
+                      style: GoogleFonts.nunito(
+                        fontSize: 15,
+                        fontWeight: FontWeight.w600,
+                        color: Colors.white.withValues(alpha: 0.9),
+                      ),
+                    ),
+                  ),
                 ),
-              ),
+              ],
             ),
           ),
-
-          const SizedBox(height: 14),
-
-          // ── Breathe before a prayer ────────────────────────────────────────
-          SizedBox(
-            width: double.infinity,
-            child: OutlinedButton(
-              onPressed: () => _start(forPrayer: true),
-              style: OutlinedButton.styleFrom(
-                foregroundColor: Colors.white,
-                side: BorderSide(color: Colors.white.withValues(alpha: 0.55), width: 1.5),
-                shape: RoundedRectangleBorder(
-                  borderRadius: BorderRadius.circular(30),
-                ),
-                padding: const EdgeInsets.symmetric(vertical: 16),
-              ),
-              child: Text(
-                AppStrings.breatheBeforeAPrayer,
-                style: GoogleFonts.nunito(
-                  fontSize: 15,
-                  fontWeight: FontWeight.w600,
-                  color: Colors.white.withValues(alpha: 0.9),
-                ),
-              ),
-            ),
-          ),
-        ],
-      ),
+        ),
+      ],
     );
   }
 
