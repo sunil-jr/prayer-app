@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:flutter_animate/flutter_animate.dart';
 import 'package:google_fonts/google_fonts.dart';
 import '../../../constants/app_colors.dart';
 import '../../../constants/app_strings.dart';
@@ -75,7 +76,7 @@ class VerseRevealPage extends StatelessWidget {
                       crossAxisAlignment: CrossAxisAlignment.start,
                       children: [
                         Text(
-                          '“',
+                          '"',
                           style: GoogleFonts.lora(
                             color: AppColors.primary.withValues(alpha: 0.4),
                             fontSize: 64,
@@ -103,16 +104,17 @@ class VerseRevealPage extends StatelessWidget {
                         ),
                       ],
                     ),
-                  ),
+                  ).animate().fadeIn(duration: 600.ms, curve: Curves.easeOut),
                 ),
               ),
 
               const SizedBox(height: 32),
+
               OnboardingContinueButton(
                 enabled: true,
                 onTap: onNext,
                 label: AppStrings.onboardingVerseNext,
-              ),
+              ).animate().fadeIn(delay: 700.ms, duration: 500.ms),
             ],
           ),
         ),
