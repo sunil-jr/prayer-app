@@ -146,7 +146,7 @@ class _AnsweredScreenState extends State<AnsweredScreen> {
                         physics: const BouncingScrollPhysics(),
                         padding: EdgeInsets.fromLTRB(
                           20, 0, 20,
-                          MediaQuery.of(context).viewPadding.bottom + kBottomNavigationBarHeight + 72,
+                          MediaQuery.of(context).padding.bottom + 88,
                         ),
                         itemCount: _filtered.length,
                         separatorBuilder: (_, _) => const SizedBox(height: 12),
@@ -164,19 +164,15 @@ class _AnsweredScreenState extends State<AnsweredScreen> {
           ),
         ],
       ),
-      floatingActionButton: Padding(
-        padding: EdgeInsets.only(
-          bottom: MediaQuery.of(context).viewPadding.bottom + kBottomNavigationBarHeight + 16,
-        ),
-        child: FloatingActionButton(
-          onPressed: _addPrayer,
-          backgroundColor: AppColors.primary,
-          foregroundColor: Colors.white,
-          elevation: 2,
-          tooltip: AppStrings.answeredAddTitle,
-          child: const Icon(Icons.add),
-        ),
+      floatingActionButton: FloatingActionButton(
+        onPressed: _addPrayer,
+        backgroundColor: AppColors.primary,
+        foregroundColor: Colors.white,
+        elevation: 2,
+        tooltip: AppStrings.answeredAddTitle,
+        child: const Icon(Icons.add),
       ),
+      floatingActionButtonLocation: FloatingActionButtonLocation.endFloat,
     );
   }
 }

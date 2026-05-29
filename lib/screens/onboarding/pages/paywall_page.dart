@@ -1,12 +1,16 @@
 import 'package:flutter/material.dart';
 import 'package:google_fonts/google_fonts.dart';
+import 'package:purchases_flutter/purchases_flutter.dart';
 import '../../../constants/app_colors.dart';
 import '../../../constants/app_strings.dart';
+import '../../../services/purchase_service.dart';
 
 class PaywallPage extends StatefulWidget {
-  final VoidCallback onFinish;
+  final VoidCallback onPurchased;
+  /// When null the skip button is hidden (standalone / post-onboarding gate).
+  final VoidCallback? onSkip;
 
-  const PaywallPage({super.key, required this.onFinish});
+  const PaywallPage({super.key, required this.onPurchased, this.onSkip});
 
   @override
   State<PaywallPage> createState() => _PaywallPageState();
@@ -14,6 +18,86 @@ class PaywallPage extends StatefulWidget {
 
 class _PaywallPageState extends State<PaywallPage> {
   int _selectedPlan = 1; // 0=monthly, 1=yearly, 2=lifetime
+  bool _loading = false;
+  List<Package>? _packages;
+
+  static const _planTypes = [
+    PackageType.monthly,
+    PackageType.annual,
+    PackageType.lifetime,
+  ];
+
+  @override
+  void initState() {
+    super.initState();
+    _loadOfferings();
+  }
+
+  Future<void> _loadOfferings() async {
+    final offerings = await PurchaseService.getOfferings();
+    if (!mounted || offerings?.current == null) return;
+    setState(() => _packages = offerings!.current!.availablePackages);
+  }
+
+  Package? _pkgAt(int index) {
+    if (_packages == null) return null;
+    final type = _planTypes[index];
+    try {
+      return _packages!.firstWhere((p) => p.packageType == type);
+    } catch (_) {
+      return null;
+    }
+  }
+
+  String _priceAt(int index) {
+    final pkg = _pkgAt(index);
+    if (pkg != null) return pkg.storeProduct.priceString;
+    return [
+      AppStrings.onboardingPaywallMonthlyPrice,
+      AppStrings.onboardingPaywallYearlyPrice,
+      AppStrings.onboardingPaywallLifetimePrice,
+    ][index];
+  }
+
+  Future<void> _subscribe() async {
+    final pkg = _pkgAt(_selectedPlan);
+    if (pkg == null) {
+      _snack(AppStrings.paywallNotAvailable);
+      return;
+    }
+    setState(() => _loading = true);
+    try {
+      final ok = await PurchaseService.purchase(pkg);
+      if (!mounted) return;
+      if (ok) widget.onPurchased();
+    } catch (_) {
+      if (!mounted) return;
+      _snack(AppStrings.paywallError);
+    } finally {
+      if (mounted) setState(() => _loading = false);
+    }
+  }
+
+  Future<void> _restore() async {
+    setState(() => _loading = true);
+    try {
+      final ok = await PurchaseService.restorePurchases();
+      if (!mounted) return;
+      if (ok) {
+        widget.onPurchased();
+      } else {
+        _snack(AppStrings.paywallRestoreNotFound);
+      }
+    } finally {
+      if (mounted) setState(() => _loading = false);
+    }
+  }
+
+  void _snack(String msg) {
+    ScaffoldMessenger.of(context).showSnackBar(
+      SnackBar(content: Text(msg), behavior: SnackBarBehavior.floating),
+    );
+  }
 
   @override
   Widget build(BuildContext context) {
@@ -61,7 +145,6 @@ class _PaywallPageState extends State<PaywallPage> {
                   ),
                 ),
                 const SizedBox(height: 20),
-                // ── Features ───────────────────────────────────────────────
                 ...[
                   AppStrings.onboardingPaywallFeature1,
                   AppStrings.onboardingPaywallFeature2,
@@ -72,8 +155,7 @@ class _PaywallPageState extends State<PaywallPage> {
                     padding: const EdgeInsets.only(bottom: 8),
                     child: Row(
                       children: [
-                        const Icon(Icons.check_circle,
-                            color: Colors.white, size: 16),
+                        const Icon(Icons.check_circle, color: Colors.white, size: 16),
                         const SizedBox(width: 10),
                         Text(
                           f,
@@ -98,7 +180,7 @@ class _PaywallPageState extends State<PaywallPage> {
               children: [
                 _PlanCard(
                   title: AppStrings.onboardingPaywallMonthly,
-                  price: AppStrings.onboardingPaywallMonthlyPrice,
+                  price: _priceAt(0),
                   badge: null,
                   selected: _selectedPlan == 0,
                   onTap: () => setState(() => _selectedPlan = 0),
@@ -106,7 +188,7 @@ class _PaywallPageState extends State<PaywallPage> {
                 const SizedBox(height: 12),
                 _PlanCard(
                   title: AppStrings.onboardingPaywallYearly,
-                  price: AppStrings.onboardingPaywallYearlyPrice,
+                  price: _priceAt(1),
                   badge: AppStrings.onboardingPaywallYearlyBadge,
                   selected: _selectedPlan == 1,
                   onTap: () => setState(() => _selectedPlan = 1),
@@ -114,7 +196,7 @@ class _PaywallPageState extends State<PaywallPage> {
                 const SizedBox(height: 12),
                 _PlanCard(
                   title: AppStrings.onboardingPaywallLifetime,
-                  price: AppStrings.onboardingPaywallLifetimePrice,
+                  price: _priceAt(2),
                   badge: null,
                   selected: _selectedPlan == 2,
                   onTap: () => setState(() => _selectedPlan = 2),
@@ -125,43 +207,68 @@ class _PaywallPageState extends State<PaywallPage> {
                 SizedBox(
                   width: double.infinity,
                   child: ElevatedButton(
-                    onPressed: widget.onFinish,
+                    onPressed: _loading ? null : _subscribe,
                     style: ElevatedButton.styleFrom(
                       backgroundColor: AppColors.primary,
                       foregroundColor: Colors.white,
+                      disabledBackgroundColor: AppColors.primaryLight,
                       shape: RoundedRectangleBorder(
                         borderRadius: BorderRadius.circular(32),
                       ),
                       padding: const EdgeInsets.symmetric(vertical: 18),
                       elevation: 0,
                     ),
-                    child: Text(
-                      AppStrings.onboardingPaywallCta,
-                      style: GoogleFonts.nunito(
-                        fontSize: 16,
-                        fontWeight: FontWeight.w800,
-                        letterSpacing: 0.3,
-                      ),
-                    ),
+                    child: _loading
+                        ? const SizedBox(
+                            width: 22,
+                            height: 22,
+                            child: CircularProgressIndicator(
+                              color: Colors.white,
+                              strokeWidth: 2.5,
+                            ),
+                          )
+                        : Text(
+                            AppStrings.onboardingPaywallCta,
+                            style: GoogleFonts.nunito(
+                              fontSize: 16,
+                              fontWeight: FontWeight.w800,
+                              letterSpacing: 0.3,
+                            ),
+                          ),
                   ),
                 ),
 
                 const SizedBox(height: 16),
 
-                // ── Skip ─────────────────────────────────────────────────
+                // ── Restore purchases ────────────────────────────────────
                 Center(
                   child: TextButton(
-                    onPressed: widget.onFinish,
+                    onPressed: _loading ? null : _restore,
                     child: Text(
-                      AppStrings.onboardingPaywallSkip,
+                      AppStrings.paywallRestorePurchases,
                       style: GoogleFonts.nunito(
                         color: AppColors.textSecondary,
-                        fontSize: 14,
+                        fontSize: 13,
                         fontWeight: FontWeight.w600,
                       ),
                     ),
                   ),
                 ),
+
+                // ── Skip (onboarding only) ───────────────────────────────
+                if (widget.onSkip != null)
+                  Center(
+                    child: TextButton(
+                      onPressed: _loading ? null : widget.onSkip,
+                      child: Text(
+                        AppStrings.onboardingPaywallSkip,
+                        style: GoogleFonts.nunito(
+                          color: AppColors.navInactive,
+                          fontSize: 13,
+                        ),
+                      ),
+                    ),
+                  ),
               ],
             ),
           ),

@@ -13,6 +13,8 @@ import 'screens/check_in/daily_check_in_flow.dart';
 import 'screens/check_in/quick_check_in_flow.dart';
 import 'screens/onboarding/onboarding_flow.dart';
 import 'services/storage_service.dart';
+import 'services/purchase_service.dart';
+import 'screens/onboarding/pages/paywall_page.dart';
 
 PageRoute<T> fadeRoute<T extends Object?>(Widget page) => PageRouteBuilder<T>(
       transitionDuration: const Duration(milliseconds: 280),
@@ -26,15 +28,59 @@ PageRoute<T> fadeRoute<T extends Object?>(Widget page) => PageRouteBuilder<T>(
 
 // ── Set to false before shipping to production ─────────────────────────────────
 const bool kTestOnboarding = false;
+// ── Set to false before shipping to production ─────────────────────────────────
+const bool kBypassPaywall = false;
 
 Widget _resolveHome() {
   if (StorageService.getBool(StorageKeys.onboardingCompleted) != true) {
     return const OnboardingFlow();
   }
-  if (!StorageService.isDailyCheckInDone()) {
-    return const DailyCheckInFlow();
+  return const EntitlementGate();
+}
+
+class EntitlementGate extends StatefulWidget {
+  const EntitlementGate({super.key});
+
+  @override
+  State<EntitlementGate> createState() => _EntitlementGateState();
+}
+
+class _EntitlementGateState extends State<EntitlementGate> {
+  bool? _entitled;
+
+  @override
+  void initState() {
+    super.initState();
+    _check();
   }
-  return const QuickCheckInFlow();
+
+  Future<void> _check() async {
+    if (kBypassPaywall) {
+      setState(() => _entitled = true);
+      return;
+    }
+    final ok = await PurchaseService.isEntitled();
+    if (mounted) setState(() => _entitled = ok);
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    if (_entitled == null) {
+      return const Scaffold(
+        backgroundColor: AppColors.background,
+        body: SizedBox.shrink(),
+      );
+    }
+    if (!_entitled!) {
+      return PaywallPage(
+        onPurchased: () => setState(() => _entitled = true),
+      );
+    }
+    if (!StorageService.isDailyCheckInDone()) {
+      return const DailyCheckInFlow();
+    }
+    return const QuickCheckInFlow();
+  }
 }
 
 class SoulGraceApp extends StatelessWidget {

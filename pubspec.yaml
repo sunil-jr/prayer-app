@@ -19,6 +19,7 @@ dependencies:
   google_fonts: ^6.1.0
   share_plus: ^9.0.0
   timezone: ^0.9.4
+  purchases_flutter: ^8.0.0
 
 dev_dependencies:
   flutter_test:

@@ -83,13 +83,19 @@ class _QNamePageState extends State<QNamePage> {
                         contentPadding: const EdgeInsets.only(bottom: 8),
                       ),
                       onSubmitted: (_) {
-                        if (_hasText) widget.onNext(_controller.text.trim());
+                        if (_hasText) {
+                          FocusScope.of(context).unfocus();
+                          widget.onNext(_controller.text.trim());
+                        }
                       },
                     ),
                     const Spacer(),
                     OnboardingContinueButton(
                       enabled: _hasText,
-                      onTap: () => widget.onNext(_controller.text.trim()),
+                      onTap: () {
+                        FocusScope.of(context).unfocus();
+                        widget.onNext(_controller.text.trim());
+                      },
                     ),
                   ],
                 ),

@@ -49,7 +49,7 @@ class _OnboardingFlowState extends State<OnboardingFlow> {
     await StorageService.setBool(StorageKeys.onboardingCompleted, true);
     await StorageService.markDailyCheckInDone();
     if (mounted) {
-      Navigator.of(context).pushReplacement(fadeRoute(const MainShell()));
+      Navigator.of(context).pushReplacement(fadeRoute(const EntitlementGate()));
     }
   }
 
@@ -169,7 +169,7 @@ class _OnboardingFlowState extends State<OnboardingFlow> {
         StreakCtaPage(name: _name, onNext: _next),
 
         // 12 — Paywall
-        PaywallPage(onFinish: _finish),
+        PaywallPage(onPurchased: _finish, onSkip: _finish),
       ],
     );
   }

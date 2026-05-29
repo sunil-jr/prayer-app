@@ -260,6 +260,21 @@ class AppStrings {
   static const String onboardingPaywallCta = 'Start My Journey';
   static const String onboardingPaywallSkip = 'Maybe later';
 
+  // ── Paywall / purchases ────────────────────────────────────────────────────
+  static const String paywallRestorePurchases = 'Restore purchases';
+  static const String paywallRestoreSuccess = 'Purchase restored! Welcome to Pro.';
+  static const String paywallRestoreNotFound = 'No previous purchase found.';
+  static const String paywallError = 'Something went wrong. Please try again.';
+  static const String paywallNotAvailable = 'Store unavailable. Try again later.';
+
+  // ── Settings — subscription ────────────────────────────────────────────────
+  static const String settingsSubscription = 'Subscription';
+  static const String settingsProStatus = 'SoulGrace Pro — Active';
+  static const String settingsNoSubscription = 'No active subscription';
+  static const String settingsRestorePurchases = 'Restore Purchases';
+  static const String settingsRestoreSuccess = 'Purchases restored successfully.';
+  static const String settingsRestoreNotFound = 'No previous purchase found.';
+
   // ── Daily check-in ─────────────────────────────────────────────────────────
   static const String checkInDailyQuestion = 'How are you feeling today?';
   static const String checkInQuickQuestion = 'How are you feeling right now?';

@@ -3,6 +3,7 @@ import 'package:google_fonts/google_fonts.dart';
 import '../../constants/app_colors.dart';
 import '../../constants/app_strings.dart';
 import '../../services/notification_service.dart';
+import '../../services/purchase_service.dart';
 import '../../services/storage_service.dart';
 
 class SettingsScreen extends StatefulWidget {
@@ -17,11 +18,14 @@ class _SettingsScreenState extends State<SettingsScreen> {
   TimeOfDay _reminderTime = const TimeOfDay(hour: 9, minute: 0);
   int _streakCount = 0;
   bool _loading = true;
+  bool? _isEntitled;
+  bool _restoring = false;
 
   @override
   void initState() {
     super.initState();
     _load();
+    _checkEntitlement();
   }
 
   void _load() {
@@ -35,6 +39,30 @@ class _SettingsScreenState extends State<SettingsScreen> {
       _streakCount = streak;
       _loading = false;
     });
+  }
+
+  Future<void> _checkEntitlement() async {
+    final ok = await PurchaseService.isEntitled();
+    if (mounted) setState(() => _isEntitled = ok);
+  }
+
+  Future<void> _restorePurchases() async {
+    setState(() => _restoring = true);
+    try {
+      final ok = await PurchaseService.restorePurchases();
+      if (!mounted) return;
+      setState(() => _isEntitled = ok);
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(
+          content: Text(
+            ok ? AppStrings.settingsRestoreSuccess : AppStrings.settingsRestoreNotFound,
+          ),
+          behavior: SnackBarBehavior.floating,
+        ),
+      );
+    } finally {
+      if (mounted) setState(() => _restoring = false);
+    }
   }
 
   Future<void> _toggleNotifications(bool enabled) async {
@@ -92,6 +120,38 @@ class _SettingsScreenState extends State<SettingsScreen> {
 
           // ── Streak card ──────────────────────────────────────────────────────
           _StreakCard(streak: _streakCount),
+          const SizedBox(height: 16),
+
+          // ── Subscription ─────────────────────────────────────────────────────
+          _SectionCard(
+            icon: Icons.workspace_premium_outlined,
+            title: AppStrings.settingsSubscription,
+            children: [
+              Padding(
+                padding: const EdgeInsets.fromLTRB(16, 10, 16, 4),
+                child: Text(
+                  _isEntitled == null
+                      ? '...'
+                      : _isEntitled!
+                          ? AppStrings.settingsProStatus
+                          : AppStrings.settingsNoSubscription,
+                  style: GoogleFonts.nunito(
+                    color: _isEntitled == true
+                        ? AppColors.accentGreen
+                        : AppColors.textSecondary,
+                    fontSize: 13,
+                    fontWeight: FontWeight.w600,
+                  ),
+                ),
+              ),
+              const Divider(height: 1, indent: 16, endIndent: 16),
+              _TapRow(
+                label: AppStrings.settingsRestorePurchases,
+                loading: _restoring,
+                onTap: _restoring ? null : _restorePurchases,
+              ),
+            ],
+          ),
           const SizedBox(height: 16),
 
           // ── Notifications ────────────────────────────────────────────────────
@@ -359,6 +419,45 @@ class _SectionCard extends StatelessWidget {
           const Divider(height: 1),
           ...children,
         ],
+      ),
+    );
+  }
+}
+
+// ── Tap row ────────────────────────────────────────────────────────────────────
+
+class _TapRow extends StatelessWidget {
+  final String label;
+  final bool loading;
+  final VoidCallback? onTap;
+
+  const _TapRow({required this.label, required this.loading, this.onTap});
+
+  @override
+  Widget build(BuildContext context) {
+    return InkWell(
+      onTap: onTap,
+      borderRadius: BorderRadius.circular(8),
+      child: Padding(
+        padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 14),
+        child: Row(
+          children: [
+            Expanded(
+              child: Text(
+                label,
+                style: GoogleFonts.nunito(color: AppColors.text, fontSize: 14),
+              ),
+            ),
+            if (loading)
+              const SizedBox(
+                width: 16,
+                height: 16,
+                child: CircularProgressIndicator(strokeWidth: 2),
+              )
+            else
+              const Icon(Icons.chevron_right, size: 18, color: AppColors.navInactive),
+          ],
+        ),
       ),
     );
   }
