@@ -37,13 +37,7 @@ class _PrayerRevealPageState extends State<PrayerRevealPage> {
     super.dispose();
   }
 
-  PrayerModel _pick() {
-    final matched = ContentData.prayers
-        .where((p) => p.moods.contains(widget.mood))
-        .toList();
-    if (matched.isNotEmpty) return matched.first;
-    return ContentData.prayers.first;
-  }
+  PrayerModel _pick() => ContentData.pickPrayer(widget.mood);
 
   void _startTyping() {
     _typingTimer = Timer.periodic(const Duration(milliseconds: 30), (t) {

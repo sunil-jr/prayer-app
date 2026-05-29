@@ -12,13 +12,7 @@ class QuickPrayerPage extends StatelessWidget {
 
   const QuickPrayerPage({super.key, required this.mood, required this.onNext});
 
-  PrayerModel _pick() {
-    final matched =
-        ContentData.prayers.where((p) => p.moods.contains(mood)).toList();
-    if (matched.length > 1) return matched[1];
-    if (matched.isNotEmpty) return matched.first;
-    return ContentData.prayers.first;
-  }
+  PrayerModel _pick() => ContentData.pickPrayer(mood);
 
   @override
   Widget build(BuildContext context) {

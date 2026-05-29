@@ -124,10 +124,7 @@ class _BreatheScreenState extends State<BreatheScreen> {
   }
 
   void _openPrayer() {
-    final now = DateTime.now();
-    final dayOfYear = now.difference(DateTime(now.year)).inDays;
-    final prayers = ContentData.prayers;
-    final prayer = prayers[dayOfYear % prayers.length];
+    final prayer = ContentData.pickPrayer(null);
     Navigator.push(context, fadeRoute(PrayerDetailScreen(prayer: prayer)));
   }
 

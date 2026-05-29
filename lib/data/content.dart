@@ -1,8 +1,29 @@
+import 'dart:math';
 import '../models/verse_model.dart';
 import '../models/prayer_model.dart';
 
 class ContentData {
   ContentData._();
+
+  // Tracks the last prayer shown per mood key so we never repeat back-to-back.
+  static final Map<String, String> _lastPrayerByMood = {};
+
+  // Pass a mood string to filter, or null to pick from all prayers.
+  static PrayerModel pickPrayer(String? mood) {
+    final pool = mood != null
+        ? prayers.where((p) => p.moods.contains(mood)).toList()
+        : List<PrayerModel>.from(prayers);
+    if (pool.isEmpty) return prayers[Random().nextInt(prayers.length)];
+    if (pool.length == 1) return pool.first;
+    final key = mood ?? '_any';
+    final lastId = _lastPrayerByMood[key];
+    final candidates =
+        lastId != null ? pool.where((p) => p.id != lastId).toList() : pool;
+    final effective = candidates.isNotEmpty ? candidates : pool;
+    final prayer = effective[Random().nextInt(effective.length)];
+    _lastPrayerByMood[key] = prayer.id;
+    return prayer;
+  }
 
   static const List<VerseModel> verses = [
     // ── Anxiety ──────────────────────────────────────────────────────────────
