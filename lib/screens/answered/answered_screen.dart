@@ -143,7 +143,11 @@ class _AnsweredScreenState extends State<AnsweredScreen> {
                 : _filtered.isEmpty
                     ? _EmptyState(tabIndex: _tabIndex)
                     : ListView.separated(
-                        padding: const EdgeInsets.fromLTRB(20, 0, 20, 96),
+                        physics: const BouncingScrollPhysics(),
+                        padding: EdgeInsets.fromLTRB(
+                          20, 0, 20,
+                          MediaQuery.of(context).viewPadding.bottom + kBottomNavigationBarHeight + 72,
+                        ),
                         itemCount: _filtered.length,
                         separatorBuilder: (_, _) => const SizedBox(height: 12),
                         itemBuilder: (_, i) {
@@ -160,13 +164,18 @@ class _AnsweredScreenState extends State<AnsweredScreen> {
           ),
         ],
       ),
-      floatingActionButton: FloatingActionButton(
-        onPressed: _addPrayer,
-        backgroundColor: AppColors.primary,
-        foregroundColor: Colors.white,
-        elevation: 2,
-        tooltip: AppStrings.answeredAddTitle,
-        child: const Icon(Icons.add),
+      floatingActionButton: Padding(
+        padding: EdgeInsets.only(
+          bottom: MediaQuery.of(context).viewPadding.bottom + kBottomNavigationBarHeight + 16,
+        ),
+        child: FloatingActionButton(
+          onPressed: _addPrayer,
+          backgroundColor: AppColors.primary,
+          foregroundColor: Colors.white,
+          elevation: 2,
+          tooltip: AppStrings.answeredAddTitle,
+          child: const Icon(Icons.add),
+        ),
       ),
     );
   }

@@ -101,7 +101,11 @@ class _JournalScreenState extends State<JournalScreen> {
                 : _entries.isEmpty
                     ? _EmptyState(onWrite: () => _openEntry())
                     : ListView.separated(
-                        padding: const EdgeInsets.fromLTRB(20, 0, 20, 100),
+                        physics: const BouncingScrollPhysics(),
+                        padding: EdgeInsets.fromLTRB(
+                          20, 0, 20,
+                          MediaQuery.of(context).viewPadding.bottom + kBottomNavigationBarHeight + 72,
+                        ),
                         itemCount: _entries.length,
                         separatorBuilder: (_, _) => const SizedBox(height: 12),
                         itemBuilder: (_, i) {
@@ -129,13 +133,18 @@ class _JournalScreenState extends State<JournalScreen> {
           ),
         ],
       ),
-      floatingActionButton: FloatingActionButton(
-        onPressed: () => _openEntry(),
-        backgroundColor: AppColors.primary,
-        foregroundColor: Colors.white,
-        elevation: 2,
-        tooltip: AppStrings.semanticNewEntryFab,
-        child: const Icon(Icons.edit_outlined),
+      floatingActionButton: Padding(
+        padding: EdgeInsets.only(
+          bottom: MediaQuery.of(context).viewPadding.bottom + kBottomNavigationBarHeight + 16,
+        ),
+        child: FloatingActionButton(
+          onPressed: () => _openEntry(),
+          backgroundColor: AppColors.primary,
+          foregroundColor: Colors.white,
+          elevation: 2,
+          tooltip: AppStrings.semanticNewEntryFab,
+          child: const Icon(Icons.edit_outlined),
+        ),
       ),
     );
   }

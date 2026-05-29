@@ -59,7 +59,7 @@ class _QSinglePageState extends State<QSinglePage> {
                     const SizedBox(height: 32),
                     Expanded(
                       child: ListView.separated(
-                        physics: const NeverScrollableScrollPhysics(),
+                        physics: const BouncingScrollPhysics(),
                         itemCount: widget.options.length,
                         separatorBuilder: (_, _) => const SizedBox(height: 12),
                         itemBuilder: (_, i) {

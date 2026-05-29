@@ -93,7 +93,13 @@ class _WellnessScreenState extends State<WellnessScreen> {
       body: _loading
           ? const Center(child: CircularProgressIndicator())
           : SingleChildScrollView(
-              padding: EdgeInsets.fromLTRB(20, topPad + 28, 20, 32),
+              physics: const BouncingScrollPhysics(),
+              padding: EdgeInsets.fromLTRB(
+                20,
+                topPad + 28,
+                20,
+                MediaQuery.of(context).viewPadding.bottom + kBottomNavigationBarHeight + 16,
+              ),
               child: Column(
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [

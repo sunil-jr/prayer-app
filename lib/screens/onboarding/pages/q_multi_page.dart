@@ -74,7 +74,7 @@ class _QMultiPageState extends State<QMultiPage> {
                     const SizedBox(height: 28),
                     Expanded(
                       child: ListView.separated(
-                        physics: const NeverScrollableScrollPhysics(),
+                        physics: const BouncingScrollPhysics(),
                         itemCount: widget.options.length,
                         separatorBuilder: (_, _) => const SizedBox(height: 10),
                         itemBuilder: (_, i) {

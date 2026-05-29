@@ -31,6 +31,15 @@ class StorageService {
 
   static Future<bool> remove(String key) => _prefs.remove(key);
 
+  // ── Daily check-in ─────────────────────────────────────────────────────────
+
+  static bool isDailyCheckInDone() =>
+      getString(StorageKeys.dailyCheckInDate) == _dateKey(DateTime.now());
+
+  static Future<void> markDailyCheckInDone() async {
+    await setString(StorageKeys.dailyCheckInDate, _dateKey(DateTime.now()));
+  }
+
   // ── Journal entries ────────────────────────────────────────────────────────
 
   static Future<List<JournalEntry>> getEntries() async {
@@ -152,6 +161,7 @@ class StorageKeys {
   static const String streakCount = 'streak_count';
   static const String streakLastDate = 'streak_last_date';
   static const String breatheSessions = 'breathe_sessions';
+  static const String dailyCheckInDate = 'daily_check_in_date';
 
   // ── Onboarding ─────────────────────────────────────────────────────────────
   static const String onboardingCompleted = 'onboarding_completed';

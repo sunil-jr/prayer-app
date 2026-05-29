@@ -79,7 +79,14 @@ class _AmenButtonState extends State<_AmenButton> {
     final button = SizedBox(
       width: double.infinity,
       child: ElevatedButton(
-        onPressed: () => setState(() => _tapCount++),
+        onPressed: () {
+          setState(() => _tapCount++);
+          final nav = Navigator.of(context);
+          Future.delayed(
+            const Duration(milliseconds: 300),
+            () => nav.popUntil((route) => route.isFirst),
+          );
+        },
         child: const Text(AppStrings.prayerDetailAmen),
       ),
     );

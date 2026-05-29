@@ -95,7 +95,9 @@ class _HomeScreenState extends State<HomeScreen> {
   }
 
   Widget _buildBody() {
+    final bottomPad = MediaQuery.of(context).viewPadding.bottom + kBottomNavigationBarHeight + 16;
     return SingleChildScrollView(
+      physics: const BouncingScrollPhysics(),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
@@ -129,7 +131,7 @@ class _HomeScreenState extends State<HomeScreen> {
                   const SizedBox(height: 16),
                   _RecentlyAnsweredCard(prayer: _recentAnswered!),
                 ],
-                const SizedBox(height: 32),
+                SizedBox(height: bottomPad),
               ],
             ),
           ),

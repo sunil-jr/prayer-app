@@ -47,6 +47,7 @@ class _OnboardingFlowState extends State<OnboardingFlow> {
     await StorageService.setStringList(StorageKeys.onboardingBarriers, _barriers);
     await StorageService.setStringList(StorageKeys.onboardingGoals, _goals);
     await StorageService.setBool(StorageKeys.onboardingCompleted, true);
+    await StorageService.markDailyCheckInDone();
     if (mounted) {
       Navigator.of(context).pushReplacement(fadeRoute(const MainShell()));
     }

@@ -15,22 +15,42 @@ class BreatheScreen extends StatefulWidget {
   State<BreatheScreen> createState() => _BreatheScreenState();
 }
 
-enum _Phase { intro, breatheIn, breatheOut, complete }
+enum _Phase {
+  intro,
+  countdown3,
+  countdown2,
+  countdown1,
+  breatheIn,
+  breatheOut,
+  complete,
+}
 
 class _BreatheScreenState extends State<BreatheScreen> {
   _Phase _phase = _Phase.intro;
-  int _cycle = 1;
-  bool _breatheForPrayer = false;
+  bool _circleReady = false;
   Timer? _timer;
 
-  static const int _totalCycles = 3;
+  static const Duration _countdownStep = Duration(seconds: 1);
   static const Duration _breatheDuration = Duration(seconds: 4);
 
-  static const double _minCircle = 120;
+  static const double _minCircle = 20;
   static const double _maxCircle = 210;
 
+  // Circle starts at pea size; post-frame callback triggers expand animation.
   double get _circleSize =>
-      _phase == _Phase.breatheIn ? _maxCircle : _minCircle;
+      (_phase == _Phase.breatheIn && _circleReady) ? _maxCircle : _minCircle;
+
+  bool get _isCountdown =>
+      _phase == _Phase.countdown3 ||
+      _phase == _Phase.countdown2 ||
+      _phase == _Phase.countdown1;
+
+  String get _countdownNumber => switch (_phase) {
+        _Phase.countdown3 => '3',
+        _Phase.countdown2 => '2',
+        _Phase.countdown1 => '1',
+        _ => '',
+      };
 
   @override
   void dispose() {
@@ -38,47 +58,68 @@ class _BreatheScreenState extends State<BreatheScreen> {
     super.dispose();
   }
 
-  void _start({bool forPrayer = false}) {
+  void _start() {
     setState(() {
-      _phase = _Phase.breatheIn;
-      _cycle = 1;
-      _breatheForPrayer = forPrayer;
+      _phase = _Phase.countdown3;
+      _circleReady = false;
     });
     _scheduleNext();
   }
 
   void _scheduleNext() {
     _timer?.cancel();
-    _timer = Timer(_breatheDuration, () {
-      if (!mounted) return;
-      setState(() {
-        if (_phase == _Phase.breatheIn) {
-          _phase = _Phase.breatheOut;
-        } else if (_phase == _Phase.breatheOut) {
-          if (_cycle >= _totalCycles) {
-            _phase = _Phase.complete;
-            StorageService.incrementBreatheSessions();
-            if (_breatheForPrayer) {
-              _timer = Timer(const Duration(milliseconds: 800), () {
-                if (mounted) _openPrayer();
-              });
-            }
-            return;
-          }
-          _cycle++;
-          _phase = _Phase.breatheIn;
-        }
-      });
-      if (_phase != _Phase.complete) _scheduleNext();
+    final duration =
+        (_phase == _Phase.breatheIn || _phase == _Phase.breatheOut)
+            ? _breatheDuration
+            : _countdownStep;
+    _timer = Timer(duration, _advance);
+  }
+
+  void _advance() {
+    if (!mounted) return;
+
+    _Phase? next;
+    switch (_phase) {
+      case _Phase.intro:
+        return;
+      case _Phase.countdown3:
+        next = _Phase.countdown2;
+      case _Phase.countdown2:
+        next = _Phase.countdown1;
+      case _Phase.countdown1:
+        next = _Phase.breatheIn;
+      case _Phase.breatheIn:
+        next = _Phase.breatheOut;
+      case _Phase.breatheOut:
+        next = _Phase.complete;
+      case _Phase.complete:
+        return;
+    }
+
+    setState(() {
+      _phase = next!;
+      if (_phase == _Phase.breatheIn) _circleReady = false;
     });
+
+    if (_phase == _Phase.breatheIn) {
+      WidgetsBinding.instance.addPostFrameCallback((_) {
+        if (mounted) setState(() => _circleReady = true);
+      });
+    }
+
+    if (_phase == _Phase.complete) {
+      StorageService.incrementBreatheSessions();
+      return;
+    }
+
+    _scheduleNext();
   }
 
   void _reset() {
     _timer?.cancel();
     setState(() {
       _phase = _Phase.intro;
-      _cycle = 1;
-      _breatheForPrayer = false;
+      _circleReady = false;
     });
   }
 
@@ -92,69 +133,78 @@ class _BreatheScreenState extends State<BreatheScreen> {
 
   @override
   Widget build(BuildContext context) {
-    return Container(
-      decoration: const BoxDecoration(
-        gradient: LinearGradient(
-          begin: Alignment.topCenter,
-          end: Alignment.bottomCenter,
-          colors: [AppColors.primaryDeep, AppColors.primaryLight],
+    return DefaultTextStyle.merge(
+      style: const TextStyle(decoration: TextDecoration.none),
+      child: Container(
+        decoration: const BoxDecoration(
+          gradient: LinearGradient(
+            begin: Alignment.topLeft,
+            end: Alignment.bottomRight,
+            colors: [AppColors.primaryDeep, AppColors.primary, AppColors.primaryMid],
+            stops: [0.0, 0.55, 1.0],
+          ),
         ),
-      ),
-      child: SafeArea(
-        child: _phase == _Phase.intro
-            ? _buildIntro()
-            : _phase == _Phase.complete
-                ? _buildComplete()
-                : _buildActive(),
+        child: SafeArea(
+          child: AnimatedSwitcher(
+            duration: const Duration(milliseconds: 350),
+            child: _phase == _Phase.intro
+                ? _buildIntro()
+                : _phase == _Phase.complete
+                    ? _buildComplete()
+                    : _isCountdown
+                        ? _buildCountdown()
+                        : _buildBreathe(),
+          ),
+        ),
       ),
     );
   }
 
-  // ── Intro state ──────────────────────────────────────────────────────────────
+  // ── Intro ────────────────────────────────────────────────────────────────────
 
   Widget _buildIntro() {
-    return Column(
+    return Stack(
+      key: const ValueKey('intro'),
       children: [
         Align(
-          alignment: Alignment.centerRight,
+          alignment: Alignment.topRight,
           child: IconButton(
             icon: const Icon(Icons.close, color: Colors.white70),
             onPressed: () => Navigator.pop(context),
-            tooltip: 'Close',
+            tooltip: AppStrings.breatheCancel,
           ),
         ),
-        Expanded(
+        Center(
           child: Padding(
             padding: const EdgeInsets.symmetric(horizontal: 36),
             child: Column(
-              mainAxisAlignment: MainAxisAlignment.center,
+              mainAxisSize: MainAxisSize.min,
               children: [
                 Text(
                   AppStrings.breatheTitle,
                   style: GoogleFonts.lora(
                     color: Colors.white,
-                    fontSize: 32,
+                    fontSize: 28,
                     fontWeight: FontWeight.w700,
+                    height: 1.35,
                   ),
                   textAlign: TextAlign.center,
                 ),
-                const SizedBox(height: 20),
+                const SizedBox(height: 14),
                 Text(
                   AppStrings.breatheDescription,
                   style: GoogleFonts.nunito(
-                    color: Colors.white.withValues(alpha: 0.78),
+                    color: Colors.white.withValues(alpha: 0.72),
                     fontSize: 15,
                     height: 1.6,
                   ),
                   textAlign: TextAlign.center,
                 ),
                 const SizedBox(height: 52),
-
-                // ── Begin ──────────────────────────────────────────────────
                 SizedBox(
                   width: double.infinity,
                   child: ElevatedButton(
-                    onPressed: () => _start(),
+                    onPressed: _start,
                     style: ElevatedButton.styleFrom(
                       backgroundColor: Colors.white,
                       foregroundColor: AppColors.primary,
@@ -173,35 +223,6 @@ class _BreatheScreenState extends State<BreatheScreen> {
                     ),
                   ),
                 ),
-
-                const SizedBox(height: 14),
-
-                // ── Breathe before a prayer ────────────────────────────────
-                SizedBox(
-                  width: double.infinity,
-                  child: OutlinedButton(
-                    onPressed: () => _start(forPrayer: true),
-                    style: OutlinedButton.styleFrom(
-                      foregroundColor: Colors.white,
-                      side: BorderSide(
-                        color: Colors.white.withValues(alpha: 0.55),
-                        width: 1.5,
-                      ),
-                      shape: RoundedRectangleBorder(
-                        borderRadius: BorderRadius.circular(30),
-                      ),
-                      padding: const EdgeInsets.symmetric(vertical: 16),
-                    ),
-                    child: Text(
-                      AppStrings.breatheBeforeAPrayer,
-                      style: GoogleFonts.nunito(
-                        fontSize: 15,
-                        fontWeight: FontWeight.w600,
-                        color: Colors.white.withValues(alpha: 0.9),
-                      ),
-                    ),
-                  ),
-                ),
               ],
             ),
           ),
@@ -210,17 +231,55 @@ class _BreatheScreenState extends State<BreatheScreen> {
     );
   }
 
-  // ── Active breathing state ───────────────────────────────────────────────────
+  // ── Countdown ────────────────────────────────────────────────────────────────
 
-  Widget _buildActive() {
+  Widget _buildCountdown() {
+    return Column(
+      key: const ValueKey('countdown'),
+      mainAxisAlignment: MainAxisAlignment.center,
+      children: [
+        Text(
+          AppStrings.breatheTitle,
+          style: GoogleFonts.nunito(
+            color: Colors.white.withValues(alpha: 0.72),
+            fontSize: 15,
+            fontWeight: FontWeight.w500,
+          ),
+          textAlign: TextAlign.center,
+        ),
+        const SizedBox(height: 48),
+        AnimatedSwitcher(
+          duration: const Duration(milliseconds: 280),
+          transitionBuilder: (child, anim) => ScaleTransition(
+            scale: anim,
+            child: FadeTransition(opacity: anim, child: child),
+          ),
+          child: Text(
+            _countdownNumber,
+            key: ValueKey(_countdownNumber),
+            style: GoogleFonts.nunito(
+              color: Colors.white,
+              fontSize: 120,
+              fontWeight: FontWeight.w900,
+              height: 1.0,
+            ),
+          ),
+        ),
+      ],
+    );
+  }
+
+  // ── Breathe ──────────────────────────────────────────────────────────────────
+
+  Widget _buildBreathe() {
     final label = _phase == _Phase.breatheIn
         ? AppStrings.breatheIn
         : AppStrings.breatheOut;
 
     return Column(
+      key: const ValueKey('breathe'),
       mainAxisAlignment: MainAxisAlignment.center,
       children: [
-        // ── Stroke-only animated circle ──────────────────────────────────────
         AnimatedContainer(
           duration: _breatheDuration,
           curve: Curves.easeInOut,
@@ -255,33 +314,15 @@ class _BreatheScreenState extends State<BreatheScreen> {
             ),
           ),
         ),
-        const SizedBox(height: 10),
-        Text(
-          AppStrings.breatheCycle(_cycle),
-          style: GoogleFonts.nunito(
-            color: Colors.white.withValues(alpha: 0.65),
-            fontSize: 14,
-          ),
-        ),
-        const SizedBox(height: 52),
-        TextButton(
-          onPressed: _reset,
-          child: Text(
-            AppStrings.breatheCancel,
-            style: GoogleFonts.nunito(
-              color: Colors.white.withValues(alpha: 0.55),
-              fontSize: 13,
-            ),
-          ),
-        ),
       ],
     );
   }
 
-  // ── Complete state ───────────────────────────────────────────────────────────
+  // ── Complete ─────────────────────────────────────────────────────────────────
 
   Widget _buildComplete() {
     return Padding(
+      key: const ValueKey('complete'),
       padding: const EdgeInsets.symmetric(horizontal: 36),
       child: Column(
         mainAxisAlignment: MainAxisAlignment.center,
@@ -300,8 +341,9 @@ class _BreatheScreenState extends State<BreatheScreen> {
             AppStrings.breatheCompleteTitle,
             style: GoogleFonts.lora(
               color: Colors.white,
-              fontSize: 26,
+              fontSize: 22,
               fontWeight: FontWeight.w700,
+              height: 1.4,
             ),
             textAlign: TextAlign.center,
           ),
@@ -331,7 +373,10 @@ class _BreatheScreenState extends State<BreatheScreen> {
               ),
               child: Text(
                 AppStrings.breatheOpenPrayer,
-                style: GoogleFonts.nunito(fontSize: 16, fontWeight: FontWeight.w700),
+                style: GoogleFonts.nunito(
+                  fontSize: 16,
+                  fontWeight: FontWeight.w700,
+                ),
               ),
             ),
           ),

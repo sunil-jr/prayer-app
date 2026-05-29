@@ -106,7 +106,7 @@ class AppStrings {
   // ── Breathe ────────────────────────────────────────────────────────────────
   static const String breatheTitle = 'Breathe & Pray';
   static const String breatheDescription =
-      "Take a moment to center yourself. We'll guide you through 3 breathing cycles, then invite you to pray.";
+      "Take a moment to center yourself. We'll guide you through a breathing cycle, then invite you to pray.";
   static const String breatheBegin = 'Begin';
   static const String breatheIn = 'Breathe in...';
   static const String breatheOut = 'Breathe out...';
@@ -259,6 +259,11 @@ class AppStrings {
   static const String onboardingPaywallLifetimePrice = r'$79.99 once';
   static const String onboardingPaywallCta = 'Start My Journey';
   static const String onboardingPaywallSkip = 'Maybe later';
+
+  // ── Daily check-in ─────────────────────────────────────────────────────────
+  static const String checkInDailyQuestion = 'How are you feeling today?';
+  static const String checkInQuickQuestion = 'How are you feeling right now?';
+  static const String checkInQuickPrayerTitle = 'A quick prayer for you';
 
   // ── Deprecated / legacy (kept for EntryScreen / MoodSelector) ─────────────
   static const String journalSeedEmptyState =

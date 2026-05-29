@@ -7,9 +7,10 @@ import 'onboarding_shared.dart';
 
 class StreakCtaPage extends StatelessWidget {
   final String name;
+  final int streak;
   final VoidCallback onNext;
 
-  const StreakCtaPage({super.key, required this.name, required this.onNext});
+  const StreakCtaPage({super.key, required this.name, this.streak = 1, required this.onNext});
 
   @override
   Widget build(BuildContext context) {
@@ -52,7 +53,7 @@ class StreakCtaPage extends StatelessWidget {
               const Spacer(flex: 2),
 
               // ── Streak badge ───────────────────────────────────────────────
-              _StreakBadge()
+              _StreakBadge(streak: streak)
                   .animate()
                   .scale(
                     begin: const Offset(0.7, 0.7),
@@ -97,6 +98,9 @@ class StreakCtaPage extends StatelessWidget {
 }
 
 class _StreakBadge extends StatelessWidget {
+  final int streak;
+  const _StreakBadge({required this.streak});
+
   @override
   Widget build(BuildContext context) {
     return Container(
@@ -136,7 +140,7 @@ class _StreakBadge extends StatelessWidget {
               ),
           const SizedBox(height: 16),
           Text(
-            AppStrings.onboardingStreakDay(1),
+            AppStrings.onboardingStreakDay(streak),
             style: GoogleFonts.nunito(
               color: AppColors.text,
               fontSize: 36,

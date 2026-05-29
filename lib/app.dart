@@ -9,6 +9,8 @@ import 'screens/answered/answered_screen.dart';
 import 'screens/wellness/wellness_screen.dart';
 import 'screens/breathe/breathe_screen.dart';
 import 'screens/journal/journal_screen.dart';
+import 'screens/check_in/daily_check_in_flow.dart';
+import 'screens/check_in/quick_check_in_flow.dart';
 import 'screens/onboarding/onboarding_flow.dart';
 import 'services/storage_service.dart';
 
@@ -23,7 +25,17 @@ PageRoute<T> fadeRoute<T extends Object?>(Widget page) => PageRouteBuilder<T>(
     );
 
 // ── Set to false before shipping to production ─────────────────────────────────
-const bool kTestOnboarding = true;
+const bool kTestOnboarding = false;
+
+Widget _resolveHome() {
+  if (StorageService.getBool(StorageKeys.onboardingCompleted) != true) {
+    return const OnboardingFlow();
+  }
+  if (!StorageService.isDailyCheckInDone()) {
+    return const DailyCheckInFlow();
+  }
+  return const QuickCheckInFlow();
+}
 
 class SoulGraceApp extends StatelessWidget {
   const SoulGraceApp({super.key});
@@ -34,11 +46,7 @@ class SoulGraceApp extends StatelessWidget {
       title: AppStrings.appName,
       debugShowCheckedModeBanner: false,
       theme: AppTheme.light,
-      home: kTestOnboarding
-          ? const OnboardingFlow()
-          : StorageService.getBool(StorageKeys.onboardingCompleted) == true
-              ? const MainShell()
-              : const OnboardingFlow(),
+      home: kTestOnboarding ? const OnboardingFlow() : _resolveHome(),
     );
   }
 }
